@@ -83,14 +83,14 @@ moves get_move(std::string move)
 
 bool Rubicks_2x2::is_solved()
 {
-	return corners == 0b000000000001000010000011000100000101000110000111;
+	return corners == solved_corners;
 }
 
 void Rubicks_2x2::update_corners()
 {
 	uint64_t _corners = corners;
-	uint64_t corner_mask = 0b111;
-	uint64_t orientation_mask = 0b11000;
+	const uint64_t corner_mask = 0b111;
+	const uint64_t orientation_mask = 0b11000;
 
 	for (int i = 7; i >= 0; i--)
 	{
@@ -101,165 +101,133 @@ void Rubicks_2x2::update_corners()
 
 void Rubicks_2x2::rotate(face f, direction d)
 {
-	uint64_t mask;
-	uint64_t temp;
-	uint64_t mask_a;
-	uint64_t mask_b;
-	uint64_t mask_c;
-	uint64_t mask_d;
-
-	const uint64_t right_orientation_adjustment = 0b000000010000001000000000000000001000010000000000;
-	const uint64_t left_orientation_adjustment = 0b001000000000000000010000010000000000000000001000;
-	const uint64_t front_orientation_adjustment = 0b000000000000010000001000000000000000001000010000;
-	const uint64_t back_orientation_adjustment = 0b010000001000000000000000001000010000000000000000;
+	uint64_t masked_corners;
 
 	switch (f) {
 		case UP:
-			mask = 0b111111111111111111111111000000000000000000000000;
-			temp = corners & mask;
+			masked_corners = corners & up_corner_mask;
 			switch (d)
 			{
 			case CLOCKWISE:
-				corners = (((temp >> 6) | ((temp << 18)))  & mask) | (corners & ~mask);
+				corners = (((masked_corners >> 6) | ((masked_corners << 18)))  & up_corner_mask) | (corners & ~up_corner_mask);
 				break;
 			case COUNTER_CLOCKWISE:
-				corners = ((temp << 6) | ((temp >> 18) & mask)) | (corners & ~mask);
+				corners = ((masked_corners << 6) | ((masked_corners >> 18) & up_corner_mask)) | (corners & ~up_corner_mask);
 				break;
 			case DOUBLE:
-				corners = ((temp << 12) | ((temp >> 12) & mask)) | (corners & ~mask);
+				corners = ((masked_corners << 12) | ((masked_corners >> 12) & up_corner_mask)) | (corners & ~up_corner_mask);
 				break;
 			}
 			break;
 		case RIGHT:
-			mask = 0b000000111111111111000000000000111111111111000000; // URB URF DRB DRF
-			mask_a = 0b000000111111000000000000000000000000000000000000;
-			mask_b = 0b000000000000111111000000000000000000000000000000;
-			mask_c = 0b000000000000000000000000000000111111000000000000;
-			mask_d = 0b000000000000000000000000000000000000111111000000;
-			temp = corners & mask;
+			masked_corners = corners & right_corner_mask;
 			switch (d)
 			{
 			case CLOCKWISE:
-				corners = ((((temp & mask_a) >> 24) | (((temp & mask_b) << 6) | ((temp & mask_c) >> 6) | ((temp & mask_d) << 24)) + right_orientation_adjustment) & mask) | (corners & ~mask);
+				corners = ((((masked_corners & URB_corner_mask) >> 24) | (((masked_corners & URF_corner_mask) << 6) | ((masked_corners & DRB_corner_mask) >> 6) | ((masked_corners & DRF_corner_mask) << 24)) + right_corner_orientation_adjustment) & right_corner_mask) | (corners & ~right_corner_mask);
 				break;
 			case COUNTER_CLOCKWISE:
-				corners = ((((temp & mask_a) >> 6) | (((temp & mask_b) >> 24) | ((temp & mask_c) << 24) | ((temp & mask_d) << 6)) + right_orientation_adjustment) & mask) | (corners & ~mask);
+				corners = ((((masked_corners & URB_corner_mask) >> 6) | (((masked_corners & URF_corner_mask) >> 24) | ((masked_corners & DRB_corner_mask) << 24) | ((masked_corners & DRF_corner_mask) << 6)) + right_corner_orientation_adjustment) & right_corner_mask) | (corners & ~right_corner_mask);
 				break;
 			case DOUBLE:
-				corners = (((temp & mask_a) >> 30) | (((temp & mask_b) >> 18) | ((temp & mask_c) << 18) | ((temp & mask_d) << 30))) | (corners & ~mask);
+				corners = (((masked_corners & URB_corner_mask) >> 30) | (((masked_corners & URF_corner_mask) >> 18) | ((masked_corners & DRB_corner_mask) << 18) | ((masked_corners & DRF_corner_mask) << 30))) | (corners & ~right_corner_mask);
 				break;
 			}
-			if ((corners & 0b000000000000000000000000000000000000011000000000) == 1536)
-				corners -= 0b000000000000000000000000000000000000011000000000;
-			if ((corners & 0b000000000000000000000000000000011000000000000000) == 98304)
-				corners -= 0b000000000000000000000000000000011000000000000000;
-			if ((corners & 0b000000000000011000000000000000000000000000000000) == 25769803776L)
-				corners -= 0b000000000000011000000000000000000000000000000000;
-			if ((corners & 0b000000011000000000000000000000000000000000000000) == 1649267441664L)
-				corners -= 0b000000011000000000000000000000000000000000000000;
+			if ((corners & URB_corner_orientation_mask) == URB_corner_orientation_mask)
+				corners -= URB_corner_orientation_mask;
+			if ((corners & URF_corner_orientation_mask) == URF_corner_orientation_mask)
+				corners -= URF_corner_orientation_mask;
+			if ((corners & DRB_corner_orientation_mask) == DRB_corner_orientation_mask)
+				corners -= DRB_corner_orientation_mask;
+			if ((corners & DRF_corner_orientation_mask) == DRF_corner_orientation_mask)
+				corners -= DRF_corner_orientation_mask;
 			break;
 		case LEFT:
-			mask = 0b111111000000000000111111111111000000000000111111; // ULB ULF DLB DLF
-			mask_a = 0b111111000000000000000000000000000000000000000000;
-			mask_b = 0b000000000000000000111111000000000000000000000000;
-			mask_c = 0b000000000000000000000000111111000000000000000000;
-			mask_d = 0b000000000000000000000000000000000000000000111111;
-			temp = corners & mask;
+			masked_corners = corners & left_corner_mask;
 			switch (d)
 			{
 			case CLOCKWISE:
-				corners = ((((temp & mask_a) >> 18) | (((temp & mask_b) >> 24) | ((temp & mask_c) << 24) | ((temp & mask_d) << 18)) + left_orientation_adjustment) & mask) | (corners & ~mask);
+				corners = ((((masked_corners & ULB_corner_mask) >> 18) | (((masked_corners & ULF_corner_mask) >> 24) | ((masked_corners & DLB_corner_mask) << 24) | ((masked_corners & DLF_corner_mask) << 18)) + left_corner_orientation_adjustment) & left_corner_mask) | (corners & ~left_corner_mask);
 				break;
 			case COUNTER_CLOCKWISE:
-				corners = ((((temp & mask_a) >> 24) | (((temp & mask_b) << 18) | ((temp & mask_c) >> 18) | ((temp & mask_d) << 24)) + left_orientation_adjustment) & mask) | (corners & ~mask);
+				corners = ((((masked_corners & ULB_corner_mask) >> 24) | (((masked_corners & ULF_corner_mask) << 18) | ((masked_corners & DLB_corner_mask) >> 18) | ((masked_corners & DLF_corner_mask) << 24)) + left_corner_orientation_adjustment) & left_corner_mask) | (corners & ~left_corner_mask);
 				break;
 			case DOUBLE:
-				corners = (((temp & mask_a) >> 42) | (((temp & mask_b) >> 6) | ((temp & mask_c) << 6) | ((temp & mask_d) << 42))) | (corners & ~mask);
+				corners = (((masked_corners & ULB_corner_mask) >> 42) | (((masked_corners & ULF_corner_mask) >> 6) | ((masked_corners & DLB_corner_mask) << 6) | ((masked_corners & DLF_corner_mask) << 42))) | (corners & ~left_corner_mask);
 				break;
 			}
-			if ((corners & 0b000000000000000000000000000000000000000000011000) == 24)
-				corners -= 0b000000000000000000000000000000000000000000011000;
-			if ((corners & 0b000000000000000000000000011000000000000000000000) == 6291456)
-				corners -= 0b000000000000000000000000011000000000000000000000;
-			if ((corners & 0b000000000000000000011000000000000000000000000000) == 402653184)
-				corners -= 0b000000000000000000011000000000000000000000000000;
-			if ((corners & 0b011000000000000000000000000000000000000000000000) == 105553116266496L)
-				corners -= 0b011000000000000000000000000000000000000000000000;
+			if ((corners & ULB_corner_orientation_mask) == ULB_corner_orientation_mask)
+				corners -= ULB_corner_orientation_mask;
+			if ((corners & ULF_corner_orientation_mask) == ULF_corner_orientation_mask)
+				corners -= ULF_corner_orientation_mask;
+			if ((corners & DLB_corner_orientation_mask) == DLB_corner_orientation_mask)
+				corners -= DLB_corner_orientation_mask;
+			if ((corners & DLF_corner_orientation_mask) == DLF_corner_orientation_mask)
+				corners -= DLF_corner_orientation_mask;
 			break;
 		case FRONT:
-			mask = 0b000000000000111111111111000000000000111111111111; // URF ULF DRF DLF
-			mask_a = 0b000000000000111111000000000000000000000000000000;
-			mask_b = 0b000000000000000000111111000000000000000000000000;
-			mask_c = 0b000000000000000000000000000000000000111111000000;
-			mask_d = 0b000000000000000000000000000000000000000000111111;
-			temp = corners & mask;
+			masked_corners = corners & front_corner_mask;
 			switch (d)
 			{
 			case CLOCKWISE:
-				corners = ((((temp & mask_a) >> 24) | (((temp & mask_b) << 6) | ((temp & mask_c) >> 6) | ((temp & mask_d) << 24)) + front_orientation_adjustment) & mask) | (corners & ~mask);
+				corners = ((((masked_corners & URF_corner_mask) >> 24) | (((masked_corners & ULF_corner_mask) << 6) | ((masked_corners & DRF_corner_mask) >> 6) | ((masked_corners & DLF_corner_mask) << 24)) + front_corner_orientation_adjustment) & front_corner_mask) | (corners & ~front_corner_mask);
 				break;
 			case COUNTER_CLOCKWISE:
-				corners = ((((temp & mask_a) >> 6) | (((temp & mask_b) >> 24) | ((temp & mask_c) << 24) | ((temp & mask_d) << 6)) + front_orientation_adjustment) & mask) | (corners & ~mask);
+				corners = ((((masked_corners & URF_corner_mask) >> 6) | (((masked_corners & ULF_corner_mask) >> 24) | ((masked_corners & DRF_corner_mask) << 24) | ((masked_corners & DLF_corner_mask) << 6)) + front_corner_orientation_adjustment) & front_corner_mask) | (corners & ~front_corner_mask);
 				break;
 			case DOUBLE:
-				corners = (((temp & mask_a) >> 30) | (((temp & mask_b) >> 18) | ((temp & mask_c) << 18) | ((temp & mask_d) << 30))) | (corners & ~mask);
+				corners = (((masked_corners & URF_corner_mask) >> 30) | (((masked_corners & ULF_corner_mask) >> 18) | ((masked_corners & DRF_corner_mask) << 18) | ((masked_corners & DLF_corner_mask) << 30))) | (corners & ~front_corner_mask);
 				break;
 			}
-			if ((corners & 0b000000000000000000000000000000000000000000011000) == 24)
-				corners -= 0b000000000000000000000000000000000000000000011000;
-			if ((corners & 0b000000000000000000000000000000000000011000000000) == 1536)
-				corners -= 0b000000000000000000000000000000000000011000000000;
-			if ((corners & 0b000000000000000000011000000000000000000000000000) == 402653184)
-				corners -= 0b000000000000000000011000000000000000000000000000;
-			if ((corners & 0b000000000000011000000000000000000000000000000000) == 25769803776L)
-				corners -= 0b000000000000011000000000000000000000000000000000;
+			if ((corners & URF_corner_orientation_mask) == URF_corner_orientation_mask)
+				corners -= URF_corner_orientation_mask;
+			if ((corners & ULF_corner_orientation_mask) == ULF_corner_orientation_mask)
+				corners -= ULF_corner_orientation_mask;
+			if ((corners & DRF_corner_orientation_mask) == DRF_corner_orientation_mask)
+				corners -= DRF_corner_orientation_mask;
+			if ((corners & DLF_corner_orientation_mask) == DLF_corner_orientation_mask)
+				corners -= DLF_corner_orientation_mask;
 			break;
 		case BACK:
-			mask = 0b111111111111000000000000111111111111000000000000; // ULB URB DLB DRB
-			mask_a = 0b111111000000000000000000000000000000000000000000;
-			mask_b = 0b000000111111000000000000000000000000000000000000;
-			mask_c = 0b000000000000000000000000111111000000000000000000;
-			mask_d = 0b000000000000000000000000000000111111000000000000;
-			temp = corners & mask;
+			masked_corners = corners & back_corner_mask;
 			switch (d)
 			{
 			case CLOCKWISE:
-				corners = ((((temp & mask_a) >> 24) | (((temp & mask_b) << 6) | ((temp & mask_c) >> 6) | ((temp & mask_d) << 24)) + back_orientation_adjustment) & mask) | (corners & ~mask);
+				corners = ((((masked_corners & ULB_corner_mask) >> 24) | (((masked_corners & URB_corner_mask) << 6) | ((masked_corners & DLB_corner_mask) >> 6) | ((masked_corners & DRB_corner_mask) << 24)) + back_corner_orientation_adjustment) & back_corner_mask) | (corners & ~back_corner_mask);
 				break;
 			case COUNTER_CLOCKWISE:
-				corners = ((((temp & mask_a) >> 6) | (((temp & mask_b) >> 24) | ((temp & mask_c) << 24) | ((temp & mask_d) << 6)) + back_orientation_adjustment) & mask) | (corners & ~mask);
+				corners = ((((masked_corners & ULB_corner_mask) >> 6) | (((masked_corners & URB_corner_mask) >> 24) | ((masked_corners & DLB_corner_mask) << 24) | ((masked_corners & DRB_corner_mask) << 6)) + back_corner_orientation_adjustment) & back_corner_mask) | (corners & ~back_corner_mask);
 				break;
 			case DOUBLE:
-				corners = (((temp & mask_a) >> 30) | (((temp & mask_b) >> 18) | ((temp & mask_c) << 18) | ((temp & mask_d) << 30))) | (corners & ~mask);
+				corners = (((masked_corners & ULB_corner_mask) >> 30) | (((masked_corners & URB_corner_mask) >> 18) | ((masked_corners & DLB_corner_mask) << 18) | ((masked_corners & DRB_corner_mask) << 30))) | (corners & ~back_corner_mask);
 				break;
 			}
-			if ((corners & 0b000000000000000000000000000000011000000000000000) == 98304)
-				corners -= 0b000000000000000000000000000000011000000000000000;
-			if ((corners & 0b000000000000000000000000011000000000000000000000) == 6291456)
-				corners -= 0b000000000000000000000000011000000000000000000000;
-			if ((corners & 0b000000011000000000000000000000000000000000000000) == 1649267441664L)
-				corners -= 0b000000011000000000000000000000000000000000000000;
-			if ((corners & 0b011000000000000000000000000000000000000000000000) == 105553116266496L)
-				corners -= 0b011000000000000000000000000000000000000000000000;
+			if ((corners & ULB_corner_orientation_mask) == ULB_corner_orientation_mask)
+				corners -= ULB_corner_orientation_mask;
+			if ((corners & URB_corner_orientation_mask) == URB_corner_orientation_mask)
+				corners -= URB_corner_orientation_mask;
+			if ((corners & DLB_corner_orientation_mask) == DLB_corner_orientation_mask)
+				corners -= DLB_corner_orientation_mask;
+			if ((corners & DRB_corner_orientation_mask) == DRB_corner_orientation_mask)
+				corners -= DRB_corner_orientation_mask;
 			break;
 		case DOWN:
-			mask = 0b111111111111111111111111;
-			temp = corners & mask;
+			masked_corners = corners & down_corner_mask;
 			switch (d)
 			{
 			case CLOCKWISE:
-				corners = (((temp << 6) & mask) | (temp >> 18)) | (corners & ~mask);
+				corners = (((masked_corners << 6) & down_corner_mask) | (masked_corners >> 18)) | (corners & ~down_corner_mask);
 				break;
 			case COUNTER_CLOCKWISE:
-				corners = ((temp >> 6) | ((temp << 18) & mask)) | (corners & ~mask);
+				corners = ((masked_corners >> 6) | ((masked_corners << 18) & down_corner_mask)) | (corners & ~down_corner_mask);
 				break;
 			case DOUBLE:
-				corners = (((temp << 12) | (temp >> 12)) & mask) | (corners & ~mask);
+				corners = (((masked_corners << 12) | (masked_corners >> 12)) & down_corner_mask) | (corners & ~down_corner_mask);
 				break;
 			}
 			break;
 	}
-	corners &= 0b011111011111011111011111011111011111011111011111;
+	corners &= corner_orientation_readjustment_mask;
 }
 
 void Rubicks_2x2::print_cube()
@@ -343,14 +311,19 @@ void Rubicks_2x2::input_scramble(std::string scramble)
 	}
 }
 
-
-int main()
-{
-	Rubicks_2x2 cube;
-	std::string scramble;
-	std::cout << "Enter your scramble: ";
-	std::getline(std::cin, scramble);
-	cube.input_scramble(scramble);
-	cube.print_cube();
-	return 0;
-}
+// int main()
+// {
+// 	Rubicks_2x2 cube;
+// 	std::string scramble;
+// 	while (true)
+// 	{
+// 		std::cout << "Enter your scramble: ";
+// 		std::getline(std::cin, scramble);
+// 		if (scramble == "q")
+// 			break;
+// 		cube.input_scramble(scramble);
+// 		cube.print_cube();
+// 	}
+	
+// 	return 0;
+// }
