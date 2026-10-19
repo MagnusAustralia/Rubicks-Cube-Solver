@@ -1,0 +1,6 @@
+{
+    "C_Cpp.clang_format_path": "/opt/homebrew/opt/llvm/bin/clang-format",
+    "C_Cpp.clang_tidy.path": "/opt/homebrew/opt/llvm/bin/clang-tidy",
+    "C_Cpp.clang_format_style": "file",
+    "editor.formatOnSave": true
+}

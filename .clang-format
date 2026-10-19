@@ -1,0 +1,32 @@
+BasedOnStyle: LLVM
+
+# Indentation
+IndentWidth: 4
+TabWidth: 4
+UseTab: Never
+ContinuationIndentWidth: 4
+
+# Braces: opening braces on the following line
+BreakBeforeBraces: Allman
+
+# Keep statements and declarations readable
+ColumnLimit: 120
+AllowShortBlocksOnASingleLine: Never
+AllowShortFunctionsOnASingleLine: None
+AllowShortIfStatementsOnASingleLine: Never
+AllowShortLoopsOnASingleLine: false
+AllowShortCaseLabelsOnASingleLine: false
+
+# One statement per line, where formatting can control it
+AllowShortEnumsOnASingleLine: false
+
+# Pointer alignment
+PointerAlignment: Right
+DerivePointerAlignment: false
+
+# Naming conventions
+# clang-format cannot enforce all naming rules.
+# Use a linter for constants, types, and other naming checks.
+
+# Comments
+ReflowComments: true
