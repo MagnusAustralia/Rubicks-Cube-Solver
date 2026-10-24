@@ -38,37 +38,10 @@ template <int num_elements, typename cube_type> struct lehmer_data
     cube_type cube;
     uint64_t *elements;
 
-    lehmer_data(rubicks_2x2 cube_choice, int num_considered = num_elements)
-    {
-        cube = rubicks_2x2();
-        elements = &cube.corners;
-        elements_considered = num_considered;
-
-        for (int i = 0; i < num_elements; i++)
-        {
-            factorial_list[i] = permutate(num_elements - 1 - i, num_considered - 1 - i);
-        }
-    }
-
-    lehmer_data(rubicks_3x3 cube_choice, int num_considered = num_elements)
-    {
-        cube = rubicks_3x3();
-        elements = &cube.corners;
-        elements_considered = num_considered;
-
-        for (int i = 0; i < num_elements; i++)
-        {
-            factorial_list[i] = permutate(num_elements - 1 - i, num_considered - 1 - i);
-        }
-    }
+    lehmer_data(cube_type cube_choice, int num_considered = num_elements);
 
     /**
-     *
-     */
-    int get_num_elements();
-
-    /**
-     *
+     * Iterates through the
      */
     void find_permuatation_list(int (&permutation_list)[num_elements], const uint64_t mask, const int element_length);
 
@@ -78,9 +51,20 @@ template <int num_elements, typename cube_type> struct lehmer_data
     void find_position_permutation_list();
 
     /**
+     * This handles
+     */
+    int rank_orientations(const int states, const uint64_t ELEMENT_MASK, const int ELEMENT_LENGTH,
+                          const int SHIFT_WIDTH, const int type = 0);
+
+    /**
      *
      */
-    void find_orientation_permutation_list();
+    int rank_corner_orientations();
+
+    /**
+     *
+     */
+    int rank_edge_orientations(const int states);
 
     /**
      *
@@ -90,7 +74,31 @@ template <int num_elements, typename cube_type> struct lehmer_data
     /**
      *
      */
-    int lehmer_index();
+    int lehmer_index(const int type = 0);
 };
+
+template <> inline lehmer_data<8, rubicks_2x2>::lehmer_data(rubicks_2x2 cube_choice, int num_considered)
+{
+    cube = rubicks_2x2();
+    elements = &cube.corners;
+    elements_considered = num_considered;
+
+    for (int i = 0; i < num_considered; i++)
+    {
+        factorial_list[i] = permutate(num_considered - 1 - i, num_considered - 1 - i);
+    }
+}
+
+template <> inline lehmer_data<12, rubicks_3x3>::lehmer_data(rubicks_3x3 cube_choice, int num_considered)
+{
+    cube = rubicks_3x3();
+    elements = &cube.edges;
+    elements_considered = num_considered;
+
+    for (int i = 0; i < num_considered; i++)
+    {
+        factorial_list[i] = permutate(num_considered - 1 - i, num_considered - 1 - i);
+    }
+}
 
 #endif

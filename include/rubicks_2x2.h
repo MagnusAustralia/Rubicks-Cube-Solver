@@ -101,6 +101,11 @@ enum moves
 };
 
 /**
+ *
+ */
+std::string print_move(moves move);
+
+/**
  * Returns the move type of the input move
  *
  * @param move The move to convert
@@ -130,6 +135,11 @@ struct rubicks_2x2
     rubicks_2x2()
     {
         corners = SOLVED_CORNERS;
+    };
+
+    rubicks_2x2(uint64_t initial_corners)
+    {
+        corners = initial_corners;
     };
 
     /**

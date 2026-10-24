@@ -14,6 +14,13 @@ struct node
     rubicks_2x2 cube;
     moves move;
     int depth;
+
+    // Overload the < operator
+    bool operator<(const node &other) const
+    {
+        // Higher depth means LOWER priority (comes later)
+        return depth > other.depth;
+    }
 };
 
 /**

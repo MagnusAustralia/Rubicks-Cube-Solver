@@ -10,10 +10,10 @@ bool test_orientations()
     bool is_valid = true;
     for (int i = 0; i < 6; i++)
     {
-        face f = (face)0;
+        face f = (face)i;
         for (int j = 0; j < 3; j++)
         {
-            direction d = (direction)2;
+            direction d = (direction)j;
             cube.rotate(f, d);
             cube.rotate(f, d);
             cube.rotate(f, d);
@@ -26,8 +26,6 @@ bool test_orientations()
                 std::cout << "Expected: " << std::bitset<64>(SOLVED_CORNERS) << "\n";
                 std::cout << "Actual:   " << std::bitset<64>(cube.corners) << "\n";
             }
-            else
-                std::cout << "Valid\n";
         }
     }
 
@@ -42,6 +40,51 @@ std::string get_corner(corner c, orientation o)
     std::string current_corner = corner_colours[uint8_t(c)];
     return current_corner.substr(x, 1) + current_corner.substr((x + 1) % 3, 1) + current_corner.substr((x + 2) % 3, 1);
 };
+
+std::string print_move(moves move)
+{
+    switch (move)
+    {
+    case U:
+        return "U";
+    case U_PRIME:
+        return "U'";
+    case U2:
+        return "U2";
+    case R:
+        return "R";
+    case R_PRIME:
+        return "R'";
+    case R2:
+        return "R2";
+    case L:
+        return "L";
+    case L_PRIME:
+        return "L'";
+    case L2:
+        return "L2";
+    case F:
+        return "F";
+    case F_PRIME:
+        return "F'";
+    case F2:
+        return "F2";
+    case B:
+        return "B";
+    case B_PRIME:
+        return "B'";
+    case B2:
+        return "B2";
+    case D:
+        return "D";
+    case D_PRIME:
+        return "D'";
+    case D2:
+        return "D2";
+    case INVALID_MOVE:
+        return "None";
+    }
+}
 
 moves get_move(std::string move)
 {
@@ -427,18 +470,19 @@ void rubicks_2x2::input_scramble(std::string scramble)
 
 int main()
 {
-    rubicks_2x2 cube;
-    std::string scramble;
+    // rubicks_2x2 cube;
+    // std::string scramble;
 
-    while (true)
-    {
-        std::cout << "Enter your scramble: ";
-        std::getline(std::cin, scramble);
-        if (scramble == "q")
-            break;
-        cube.input_scramble(scramble);
-        cube.print_cube();
-    }
+    // while (true)
+    // {
+    //     std::cout << "Enter your scramble: ";
+    //     std::getline(std::cin, scramble);
+    //     if (scramble == "q")
+    //         break;
+    //     cube.input_scramble(scramble);
+    //     cube.print_cube();
+    // }
+    test_orientations();
 
     return 0;
 }
