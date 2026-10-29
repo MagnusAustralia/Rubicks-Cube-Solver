@@ -8,53 +8,171 @@
 #include <stdio.h>
 #include <unordered_map>
 
-template <typename T>
-void process_moves(T &cube, std::queue<T> &states, std::unordered_map<uint64_t, uint8_t> &known_states, uint8_t depth,
-                   int &num_states, const uint64_t INITIAL_CUBE_STATE)
+void process_moves(const cube_state_data &INITIAL_CUBE_STATE, std::queue<rubicks_3x3> &states,
+                   std::unordered_map<uint32_t, uint8_t> &known_states, uint8_t depth, int &num_states,
+                   const pdb_type PDB)
 {
-    for (int i = 0; i < NUM_MOVES; i++)
+    switch (PDB)
     {
-        cube.input_move((moves)i);
-        if (known_states.find(cube.corners) == known_states.end())
+    case CORNERS_PDB:
+    {
+        rubicks_3x3 cube;
+        lehmer_data<8, 8, rubicks_2x2> data;
+        for (int i = 0; i < NUM_MOVES; i++)
         {
-            known_states[cube.corners] = depth;
-            states.push(cube);
-            num_states++;
+            data.cube.corners = INITIAL_CUBE_STATE.corners;
+            moves current_move = (moves)i;
+            data.cube.input_move(current_move);
+            uint32_t index = data.lehmer_index();
+            if (known_states.find(index) == known_states.end())
+            {
+                known_states[index] = depth;
+                cube.corners = data.cube.corners;
+                states.push(cube);
+                num_states++;
+            }
         }
-        cube.corners = INITIAL_CUBE_STATE;
+        break;
+    }
+    case EDGES_CASE_1_PDB:
+    {
+        lehmer_data<12, 6, rubicks_3x3> data(CASE_ONE_3X3);
+        for (int i = 0; i < NUM_MOVES; i++)
+        {
+            data.cube.edges = INITIAL_CUBE_STATE.edges;
+            moves current_move = (moves)i;
+            data.cube.input_move(current_move);
+            uint32_t index = data.lehmer_index();
+            if (known_states.find(index) == known_states.end())
+            {
+                known_states[index] = depth;
+                states.push(data.cube);
+                num_states++;
+            }
+        }
+        break;
+    }
+    case EDGES_CASE_2_PDB:
+    {
+        lehmer_data<12, 6, rubicks_3x3> data(CASE_TWO_3X3);
+        for (int i = 0; i < NUM_MOVES; i++)
+        {
+            data.cube.edges = INITIAL_CUBE_STATE.edges;
+            moves current_move = (moves)i;
+            data.cube.input_move(current_move);
+            uint32_t index = data.lehmer_index();
+            if (known_states.find(index) == known_states.end())
+            {
+                known_states[index] = depth;
+                states.push(data.cube);
+                num_states++;
+            }
+        }
+        break;
+    }
+    case CORNER_SLICE_PDB:
+    {
+        lehmer_data<12, 4, rubicks_3x3> data(CASE_MIDDLE_SLICE_3X3);
+        for (int i = 0; i < NUM_MOVES; i++)
+        {
+            data.cube.corners = INITIAL_CUBE_STATE.corners;
+            data.cube.edges = INITIAL_CUBE_STATE.edges;
+            moves current_move = (moves)i;
+            data.cube.input_move(current_move);
+            uint32_t index = data.lehmer_index();
+            if (known_states.find(index) == known_states.end())
+            {
+                known_states[index] = depth;
+                states.push(data.cube);
+                num_states++;
+            }
+        }
+        break;
+    }
+    case EDGE_SLICE_PDB:
+    {
+        // lehmer_data<12, 12, rubicks_3x3> data(STANDARD_CUBE); TEMP FIX
+        lehmer_data<12, 4, rubicks_3x3> data(CASE_MIDDLE_SLICE_3X3);
+        for (int i = 0; i < NUM_MOVES; i++)
+        {
+            data.cube.edges = INITIAL_CUBE_STATE.edges;
+            moves current_move = (moves)i;
+            data.cube.input_move(current_move);
+            uint32_t index = data.lehmer_index();
+            if (known_states.find(index) == known_states.end())
+            {
+                known_states[index] = depth;
+                states.push(data.cube);
+                num_states++;
+            }
+        }
+        break;
+    }
+    case CORNER_SLICE_PERM_PDB:
+    {
+        lehmer_data<8, 8, rubicks_3x3> data;
+        for (int i = 0; i < NUM_MOVES; i++)
+        {
+            data.cube.corners = INITIAL_CUBE_STATE.corners;
+            data.cube.edges = INITIAL_CUBE_STATE.edges;
+            moves current_move = (moves)i;
+            // Filter out illegal moves
+            if (current_move != R && current_move != R_PRIME && current_move != L && current_move != L_PRIME &&
+                current_move != F && current_move != F_PRIME && current_move != B && current_move != B_PRIME)
+            {
+                data.cube.input_move(current_move);
+                uint32_t index = data.lehmer_index();
+                if (known_states.find(index) == known_states.end())
+                {
+                    known_states[index] = depth;
+                    states.push(data.cube);
+                    num_states++;
+                }
+            }
+        }
+        break;
+    }
+    case EDGE_SLICE_PERM_PDB:
+    {
+        // lehmer_data<8, 8, rubicks_3x3> data;
+        // data.cube = cube;
+        // for (int i = 0; i < NUM_MOVES; i++)
+        // {
+        //     moves current_move = (moves)i;
+        //     // Filter out illegal moves
+        //     if (current_move != R && current_move != R_PRIME && current_move != L && current_move != L_PRIME &&
+        //         current_move != F && current_move != F_PRIME && current_move != B && current_move != B_PRIME)
+        //     {
+        //         data.cube.input_move(current_move);
+        //         uint32_t index = data.lehmer_index();
+        //         if (known_states.find(index) == known_states.end())
+        //         {
+        //             known_states[index] = depth;
+        //             states.push(data.cube);
+        //             num_states++;
+        //         }
+        //         data.cube.corners = INITIAL_CUBE_STATE.corners;
+        //         data.cube.edges = INITIAL_CUBE_STATE.edges;
+        //     }
+        // }
+        break;
+    }
     }
 }
 
-// void process_moves(rubicks_3x3 &cube, std::queue<rubicks_3x3> &states,
-//                    std::unordered_map<uint64_t, uint8_t> &known_states, uint8_t depth, int &num_states,
-//                    const int INITIAL_CUBE_STATE)
-// {
-//     for (int i = 0; i < NUM_MOVES; i++)
-//     {
-//         cube.input_move((moves)i);
-//         if (known_states.find(cube.edges) == known_states.end())
-//         {
-//             known_states[cube.edges] = depth;
-//             states.push(cube);
-//             num_states++;
-//         }
-//         cube.edges = INITIAL_CUBE_STATE;
-//     }
-// }
-
-template <typename T>
-void bfs(uint8_t &depth, std::queue<T> &current_depth, int &num_states_processd,
-         std::unordered_map<uint64_t, uint8_t> &known_states)
+void bfs(uint8_t &depth, std::queue<rubicks_3x3> &current_depth, int &num_states_processd,
+         std::unordered_map<uint32_t, uint8_t> &known_states, const pdb_type PDB)
 {
-    while (!current_depth.empty())
+    while (!current_depth.empty() || depth == 0)
     {
         num_states_processd = 0;
-        std::queue<T> new_depth;
+        std::queue<rubicks_3x3> new_depth;
         while (!current_depth.empty())
         {
-            T cube_state = current_depth.front();
+            rubicks_3x3 cube_state = current_depth.front();
             current_depth.pop();
-            process_moves<T>(cube_state, new_depth, known_states, depth, num_states_processd, cube_state.corners);
+            process_moves(cube_state_data{cube_state.edges, cube_state.corners}, new_depth, known_states, depth,
+                          num_states_processd, PDB);
         }
 
         std::cout << "Depth: " << static_cast<int>(depth) << ", New States: " << num_states_processd << "\n";
@@ -63,96 +181,105 @@ void bfs(uint8_t &depth, std::queue<T> &current_depth, int &num_states_processd,
     }
 }
 
-void generate_corner_db()
+void generate_db(const pdb_type PDB)
 {
     uint8_t *moves_till_completion;
-    moves_till_completion = (uint8_t *)calloc(POSSIBLE_2X2_STATES / 2, sizeof(*moves_till_completion));
-
-    std::string filename = CORNERS_DB_FILENAME;
-    std::queue<rubicks_2x2> current_depth;
-    uint8_t depth = 1;
-    int num_states_processed = 1;
-    rubicks_2x2 cube;
-
-    std::unordered_map<uint64_t, uint8_t> known_states;
-    known_states[cube.corners] = 0;
-    current_depth.push(cube);
-
-    bfs<rubicks_2x2>(depth, current_depth, num_states_processed, known_states);
-
-    std::cout << "Onto Keys\n";
-
-    for (const auto &[KEY, VALUE] : known_states)
-    {
-        lehmer_data<8, rubicks_2x2> indexer{cube};
-        indexer.cube.corners = KEY;
-        int index = indexer.lehmer_index();
-        if (index & 1)
-        {
-            moves_till_completion[index >> 1] |= ((VALUE & 0b1111) << 4);
-        }
-        else
-        {
-            moves_till_completion[index >> 1] |= (VALUE & 0b1111);
-        }
-    }
-
-    FILE *file = fopen(filename.c_str(), "wb");
-    if (!file)
-    {
-        free(moves_till_completion);
-        std::cerr << "Failed to open output file\n";
-        return;
-    }
-
-    size_t r1 = fwrite(moves_till_completion, 1, POSSIBLE_2X2_STATES / 2, file);
-    printf("Wrote %zu bytes out of %d requested\n", r1, POSSIBLE_2X2_STATES / 2);
-    fclose(file);
-    free(moves_till_completion);
-}
-
-void generate_edges_db(int edge_group)
-{
-    uint8_t *moves_till_completion;
-    moves_till_completion = (uint8_t *)calloc(POSSIBLE_EDGE_STATES / 2, sizeof(*moves_till_completion));
 
     std::string filename;
     std::queue<rubicks_3x3> current_depth;
+    std::unordered_map<uint32_t, uint8_t> known_states;
     uint8_t depth = 1;
     int num_states_processed = 1;
-    rubicks_3x3 cube;
+    cube_case variation = STANDARD_CUBE;
+    unsigned int num_possible_states;
 
-    if (edge_group)
+    switch (PDB)
     {
-        cube.edges = EDGE_CASE_ONE_3X3;
+    case CORNERS_PDB:
+    {
+        num_possible_states = POSSIBLE_CORNER_STATES;
+        filename = CORNERS_DB_FILENAME;
+        lehmer_data<8, 8, rubicks_2x2> indexer(variation);
+        known_states[indexer.lehmer_index()] = 0;
+        break;
+    }
+    case EDGES_CASE_1_PDB:
+    {
+        num_possible_states = POSSIBLE_EDGE_STATES;
         filename = EDGES_1_DB_FILENAME;
+        variation = CASE_ONE_3X3;
+        lehmer_data<12, 6, rubicks_3x3> indexer(variation);
+        known_states[indexer.lehmer_index()] = 0;
+        break;
     }
-    else
+    case EDGES_CASE_2_PDB:
     {
-        cube.edges = EDGE_CASE_TWO_3X3;
+        num_possible_states = POSSIBLE_EDGE_STATES;
         filename = EDGES_2_DB_FILENAME;
+        variation = CASE_TWO_3X3;
+        lehmer_data<12, 6, rubicks_3x3> indexer(variation);
+        known_states[indexer.lehmer_index()] = 0;
+        break;
+    }
+    case CORNER_SLICE_PDB:
+    {
+        num_possible_states = POSSIBLE_CORNER_SLICE_STATES;
+        filename = CORNERS_SLICE_DB_FILENAME;
+        variation = CASE_MIDDLE_SLICE_3X3;
+        lehmer_data<12, 4, rubicks_3x3> indexer(variation);
+        known_states[indexer.lehmer_index()] = 0;
+        break;
+    }
+    case EDGE_SLICE_PDB:
+    {
+        num_possible_states = POSSIBLE_EDGE_SLICE_STATES;
+        filename = EDGES_SLICE_DB_FILENAME;
+        variation;
+        // I can't remember D:
+        // lehmer_data<12, 4, rubicks_3x3> indexer(variation);
+        // known_states[indexer.lehmer_index()] = 0;
+        break;
+    }
+    case CORNER_SLICE_PERM_PDB:
+    {
+        num_possible_states = POSSIBLE_CORNER_SLICE_PERM_STATES;
+        filename = CORNERS_SLICE_PERM_DB_FILENAME;
+        lehmer_data<8, 8, rubicks_3x3> indexer(variation);
+        known_states[indexer.lehmer_index()] = 0;
+        break;
+    }
+    case EDGE_SLICE_PERM_PDB:
+    {
+        num_possible_states = POSSIBLE_EDGE_SLICE_PERM_STATES;
+        filename = EDGES_SLICE_DB_PERM_FILENAME;
+        lehmer_data<8, 8, rubicks_3x3> indexer(variation);
+        known_states[indexer.lehmer_index()] = 0;
+        break;
+    }
     }
 
-    std::unordered_map<uint64_t, uint8_t> known_states;
-    known_states[cube.corners] = 0;
+    moves_till_completion = (uint8_t *)calloc(num_possible_states / 2, sizeof(*moves_till_completion));
+
+    rubicks_3x3 cube = rubicks_3x3(variation);
+
     current_depth.push(cube);
 
-    bfs<rubicks_3x3>(depth, current_depth, num_states_processed, known_states);
+    bfs(depth, current_depth, num_states_processed, known_states, PDB);
 
     std::cout << "Onto Keys\n";
 
-    for (const auto &[KEY, VALUE] : known_states)
+    for (const auto &[INDEX, VALUE] : known_states)
     {
-        lehmer_data<12, rubicks_3x3> indexer{cube};
-        indexer.cube.corners = KEY;
-        int index = indexer.lehmer_index();
-        if (index & 1)
+        if (INDEX < num_possible_states)
         {
-            moves_till_completion[index >> 1] |= ((VALUE & 0b1111) << 4);
-        }
-        else
-        {
-            moves_till_completion[index >> 1] |= (VALUE & 0b1111);
+            if (INDEX & 1)
+            {
+                moves_till_completion[INDEX >> 1] |= ((VALUE & 0b1111) << 4);
+            }
+            else
+            {
+                moves_till_completion[INDEX >> 1] |= (VALUE & 0b1111);
+            }
         }
     }
 
@@ -164,23 +291,52 @@ void generate_edges_db(int edge_group)
         return;
     }
 
-    size_t r1 = fwrite(moves_till_completion, 1, POSSIBLE_EDGE_STATES / 2, file);
-    printf("Wrote %zu bytes out of %d requested\n", r1, POSSIBLE_EDGE_STATES / 2);
+    size_t r1 = fwrite(moves_till_completion, 1, num_possible_states / 2, file);
+    printf("Wrote %zu bytes out of %d requested\n", r1, num_possible_states / 2);
     fclose(file);
     free(moves_till_completion);
 }
 
 int main(int argc, char *argv[])
 {
-    if (std::string(argv[1]) == "edges")
+    if (std::string(argv[1]) == "corners")
     {
-        std::cout << "Generating edges database: \n\n";
-        generate_edges_db(int(*argv[2]));
+        std::cout << "Generating corners database: \n\n";
+        generate_db(CORNERS_PDB);
+    }
+    else if (std::string(argv[1]) == "edges-1")
+    {
+        std::cout << "Generating edges-case-1 database: \n\n";
+        generate_db(EDGES_CASE_1_PDB);
+    }
+    else if (std::string(argv[1]) == "edges-2")
+    {
+        std::cout << "Generating edges-case-2 database: \n\n";
+        generate_db(EDGES_CASE_2_PDB);
+    }
+    else if (std::string(argv[1]) == "corners-slice")
+    {
+        std::cout << "Generating corners-slice database: \n\n";
+        generate_db(CORNER_SLICE_PDB);
+    }
+    else if (std::string(argv[1]) == "edges-slice")
+    {
+        std::cout << "Generating edges-slice database: \n\n";
+        generate_db(EDGE_SLICE_PDB);
+    }
+    else if (std::string(argv[1]) == "corners-slices-perm")
+    {
+        std::cout << "Generating corners-slice-perm database: \n\n";
+        generate_db(CORNER_SLICE_PERM_PDB);
+    }
+    else if (std::string(argv[1]) == "edges-slices-perm")
+    {
+        std::cout << "Generating edges-slice-perm database: \n\n";
+        generate_db(EDGE_SLICE_PERM_PDB);
     }
     else
     {
-        std::cout << "Generating corners database: \n\n";
-        generate_corner_db();
+        std::cerr << "Invalid arguments to generate_data.cpp\n";
     }
 
     return 0;

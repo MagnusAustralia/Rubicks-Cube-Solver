@@ -5,66 +5,135 @@
 #include <iostream>
 #include <sstream>
 
+bool test_rotations(const cube_case variation = STANDARD_CUBE)
+{
+    rubicks_3x3 cube(variation);
+
+    uint64_t expected_edges;
+
+    switch (variation)
+    {
+    case STANDARD_CUBE:
+        expected_edges = SOLVED_EDGES;
+        break;
+    case CASE_ONE_3X3:
+        expected_edges = EDGE_CASE_ONE_3X3;
+        break;
+    case CASE_TWO_3X3:
+        expected_edges = EDGE_CASE_TWO_3X3;
+        break;
+    case CASE_MIDDLE_SLICE_3X3:
+        expected_edges = EDGE_CASE_MIDDLE_SLICE_3X3;
+        break;
+    }
+
+    bool is_valid = true;
+    for (int i = 0; i < 6; i++)
+    {
+        face f = (face)i;
+        for (int j = 0; j < 3; j++)
+        {
+            direction d = (direction)j;
+            cube.rotate(f, d);
+            cube.rotate(f, d);
+            cube.rotate(f, d);
+            cube.rotate(f, d);
+
+            if (!cube.is_solved(variation))
+            {
+                is_valid = false;
+                std::cout << (int)f << "\n";
+                std::cout << "Expected: " << std::bitset<64>(SOLVED_CORNERS) << "\n";
+                std::cout << "Actual:   " << std::bitset<64>(cube.corners) << "\n";
+                std::cout << "Expected: " << std::bitset<64>(expected_edges) << "\n";
+                std::cout << "Actual:   " << std::bitset<64>(cube.edges) << "\n";
+            }
+        }
+    }
+
+    if (is_valid)
+    {
+        std::cout << "All tests passed!!\n";
+    }
+
+    return is_valid;
+}
+
 std::string get_edge(edge e, orientation o)
 {
     int x = (int)o;
-    std::string edge_colours[12] = {"WG", "WO", "WB", "WR", "BO", "BR", "GO", "GR", "YG", "YO", "YB", "YR"};
+    const std::string EDGE_COLOURS[13] = {"WG", "WO", "WB", "WR", "BO", "BR", "GO", "GR", "YG", "YO", "YB", "YR", "  "};
 
-    std::string current_edge = edge_colours[uint8_t(e)];
+    std::string current_edge = EDGE_COLOURS[uint8_t(e)];
     return current_edge.substr(x, 1) + current_edge.substr((x + 1) % 2, 1);
 };
 
-bool rubicks_3x3::is_solved()
+bool rubicks_3x3::is_solved(const cube_case variation)
 {
-    return corners == SOLVED_CORNERS and edges == SOLVED_EDGES;
+    uint64_t expected_edges;
+
+    switch (variation)
+    {
+    case STANDARD_CUBE:
+        expected_edges = SOLVED_EDGES;
+        break;
+    case CASE_ONE_3X3:
+        expected_edges = EDGE_CASE_ONE_3X3;
+        break;
+    case CASE_TWO_3X3:
+        expected_edges = EDGE_CASE_TWO_3X3;
+        break;
+    case CASE_MIDDLE_SLICE_3X3:
+        expected_edges = EDGE_CASE_MIDDLE_SLICE_3X3;
+        break;
+    }
+
+    return corners == SOLVED_CORNERS and edges == expected_edges;
 }
 
 void rubicks_3x3::update_corners()
 {
     uint64_t remaining_corners = corners;
-    const uint64_t CORNER_MASK = 0b111;
-    const uint64_t CORNER_ORIENTATION_MASK = 0b11000;
 
-    for (int i = 7; i >= 0; i--)
+    for (int i = NUM_CORNERS - 1; i >= 0; i--)
     {
-        corners_list[i] =
-            get_corner(static_cast<corner>((uint8_t)(CORNER_MASK & remaining_corners)),
-                       static_cast<orientation>((uint8_t)((CORNER_ORIENTATION_MASK & remaining_corners) >> 3)));
-        remaining_corners >>= 6;
+        corners_list[i] = get_corner(static_cast<corner>((uint8_t)(CORNER_PIECE_MASK & remaining_corners)),
+                                     static_cast<orientation>((uint8_t)((CORNER_ORIENTATION_MASK & remaining_corners) >>
+                                                                        CORNER_ORIENTATION_SHIFT)));
+        remaining_corners >>= CORNER_WIDTH;
     }
 }
 
 void rubicks_3x3::update_edges()
 {
     uint64_t remaining_edges = edges;
-    const uint64_t EDGE_MASK = 0b1111;
-    const uint64_t EDGE_ORIENTATION_MASK = 0b10000;
 
-    for (int i = 11; i >= 0; i--)
+    for (int i = NUM_EDGES - 1; i >= 0; i--)
     {
-        edges_list[i] = get_edge(static_cast<edge>((uint8_t)(EDGE_MASK & remaining_edges)),
-                                 static_cast<orientation>((uint8_t)((EDGE_ORIENTATION_MASK & remaining_edges) >> 4)));
-        remaining_edges >>= 5;
+        edges_list[i] = get_edge(
+            static_cast<edge>((uint8_t)(EDGE_PIECE_MASK & remaining_edges)),
+            static_cast<orientation>((uint8_t)((EDGE_ORIENTATION_MASK & remaining_edges) >> EDGE_ORIENTATION_SHIFT)));
+        remaining_edges >>= EDGE_WIDTH;
     }
 }
 
-void rubicks_3x3::adjust_orientations(uint64_t &corners, uint64_t adjustment)
+void rubicks_3x3::adjust_orientations(uint64_t adjustment)
 {
-    const uint64_t ORIENTATION_MASK = 0b11000;
-
-    for (int i = 0; i < 8; i++)
+    for (int i = 0; i < NUM_CORNERS; i++)
     {
-        if (adjustment & ORIENTATION_MASK)
+        if (adjustment & CORNER_ORIENTATION_MASK)
         {
-            int initial_orientation = ((corners >> (6 * i)) & ORIENTATION_MASK) >> 3;
+            int initial_orientation =
+                ((corners >> (CORNER_WIDTH * i)) & CORNER_ORIENTATION_MASK) >> CORNER_ORIENTATION_SHIFT;
 
-            int new_orientation = (adjustment & ORIENTATION_MASK) >> 3;
+            int new_orientation = (adjustment & CORNER_ORIENTATION_MASK) >> CORNER_ORIENTATION_SHIFT;
 
-            new_orientation = (initial_orientation + new_orientation) % 3;
+            new_orientation = (initial_orientation + new_orientation) % NUM_CORNER_ORIENTATIONS;
 
-            corners = (corners & ~(ORIENTATION_MASK << (6 * i))) | ((uint64_t)new_orientation << (3 + 6 * i));
+            corners = (corners & ~(CORNER_ORIENTATION_MASK << (6 * i))) |
+                      ((uint64_t)new_orientation << (CORNER_ORIENTATION_SHIFT + CORNER_WIDTH * i));
         }
-        adjustment >>= 6;
+        adjustment >>= CORNER_WIDTH;
     }
 }
 
@@ -81,18 +150,26 @@ void rubicks_3x3::rotate(face f, direction d)
         switch (d)
         {
         case CLOCKWISE:
-            corners =
-                (((masked_corners >> 6) | ((masked_corners << 18))) & UP_CORNER_MASK) | (corners & ~UP_CORNER_MASK);
-            edges = (((masked_edges >> 5) | (masked_edges << 15)) & UP_EDGE_MASK) | (edges & ~UP_EDGE_MASK);
+            corners = (((masked_corners >> CORNER_WIDTH) | ((masked_corners << (3 * CORNER_WIDTH)))) & UP_CORNER_MASK) |
+                      (corners & ~UP_CORNER_MASK);
+
+            edges = (((masked_edges >> EDGE_WIDTH) | (masked_edges << (3 * EDGE_WIDTH))) & UP_EDGE_MASK) |
+                    (edges & ~UP_EDGE_MASK);
             break;
         case COUNTER_CLOCKWISE:
-            corners = (((masked_corners << 6) | (masked_corners >> 18)) & UP_CORNER_MASK) | (corners & ~UP_CORNER_MASK);
-            edges = (((masked_edges << 5) | (masked_edges >> 15)) & UP_EDGE_MASK) | (edges & ~UP_EDGE_MASK);
+            corners = (((masked_corners << CORNER_WIDTH) | (masked_corners >> (3 * CORNER_WIDTH))) & UP_CORNER_MASK) |
+                      (corners & ~UP_CORNER_MASK);
+
+            edges = (((masked_edges << EDGE_WIDTH) | (masked_edges >> (3 * EDGE_WIDTH))) & UP_EDGE_MASK) |
+                    (edges & ~UP_EDGE_MASK);
             break;
         case DOUBLE:
             corners =
-                (((masked_corners << 12) | (masked_corners >> 12)) & UP_CORNER_MASK) | (corners & ~UP_CORNER_MASK);
-            edges = (((masked_edges >> 10) | (masked_edges << 10)) & UP_EDGE_MASK) | (edges & ~UP_EDGE_MASK);
+                (((masked_corners << (2 * CORNER_WIDTH)) | (masked_corners >> (2 * CORNER_WIDTH))) & UP_CORNER_MASK) |
+                (corners & ~UP_CORNER_MASK);
+
+            edges = (((masked_edges >> (2 * EDGE_WIDTH)) | (masked_edges << (2 * EDGE_WIDTH))) & UP_EDGE_MASK) |
+                    (edges & ~UP_EDGE_MASK);
             break;
         }
         break;
@@ -102,37 +179,48 @@ void rubicks_3x3::rotate(face f, direction d)
         switch (d)
         {
         case CLOCKWISE:
-            corners = ((((masked_corners & URB_CORNER_MASK) >> 24) |
-                        (((masked_corners & URF_CORNER_MASK) << 6) | ((masked_corners & DRB_CORNER_MASK) >> 6) |
-                         ((masked_corners & DRF_CORNER_MASK) << 24))) &
+            corners = ((((masked_corners & URB_CORNER_MASK) >> (4 * CORNER_WIDTH)) |
+                        (((masked_corners & URF_CORNER_MASK) << CORNER_WIDTH) |
+                         ((masked_corners & DRB_CORNER_MASK) >> CORNER_WIDTH) |
+                         ((masked_corners & DRF_CORNER_MASK) << (4 * CORNER_WIDTH)))) &
                        RIGHT_CORNER_MASK) |
                       (corners & ~RIGHT_CORNER_MASK);
-            adjust_orientations(corners, RIGHT_CORNER_ORIENTATION_ADJUSTMENT);
-            edges = (((masked_edges & UR_EDGE_MASK) >> 25) |
-                     (((masked_edges & FR_EDGE_MASK) << 15) | ((masked_edges & BR_EDGE_MASK) >> 15) |
-                      ((masked_edges & DR_EDGE_MASK) << 25))) |
+
+            adjust_orientations(RIGHT_CORNER_ORIENTATION_ADJUSTMENT);
+
+            edges = (((masked_edges & UR_EDGE_MASK) >> (5 * EDGE_WIDTH)) |
+                     (((masked_edges & FR_EDGE_MASK) << (3 * EDGE_WIDTH)) |
+                      ((masked_edges & BR_EDGE_MASK) >> (3 * EDGE_WIDTH)) |
+                      ((masked_edges & DR_EDGE_MASK) << (5 * EDGE_WIDTH)))) |
                     (edges & ~RIGHT_EDGE_MASK);
             break;
         case COUNTER_CLOCKWISE:
-            corners = ((((masked_corners & URB_CORNER_MASK) >> 6) |
-                        (((masked_corners & URF_CORNER_MASK) >> 24) | ((masked_corners & DRB_CORNER_MASK) << 24) |
-                         ((masked_corners & DRF_CORNER_MASK) << 6))) &
+            corners = ((((masked_corners & URB_CORNER_MASK) >> CORNER_WIDTH) |
+                        (((masked_corners & URF_CORNER_MASK) >> (4 * CORNER_WIDTH)) |
+                         ((masked_corners & DRB_CORNER_MASK) << (4 * CORNER_WIDTH)) |
+                         ((masked_corners & DRF_CORNER_MASK) << CORNER_WIDTH))) &
                        RIGHT_CORNER_MASK) |
                       (corners & ~RIGHT_CORNER_MASK);
-            adjust_orientations(corners, RIGHT_CORNER_ORIENTATION_ADJUSTMENT);
-            edges = (((masked_edges & UR_EDGE_MASK) >> 15) |
-                     (((masked_edges & FR_EDGE_MASK) >> 25) | ((masked_edges & BR_EDGE_MASK) << 25) |
-                      ((masked_edges & DR_EDGE_MASK) << 15))) |
+
+            adjust_orientations(RIGHT_CORNER_ORIENTATION_ADJUSTMENT);
+
+            edges = (((masked_edges & UR_EDGE_MASK) >> (3 * EDGE_WIDTH)) |
+                     (((masked_edges & FR_EDGE_MASK) >> (5 * EDGE_WIDTH)) |
+                      ((masked_edges & BR_EDGE_MASK) << (5 * EDGE_WIDTH)) |
+                      ((masked_edges & DR_EDGE_MASK) << (3 * EDGE_WIDTH)))) |
                     (edges & ~RIGHT_EDGE_MASK);
             break;
         case DOUBLE:
-            corners = (((masked_corners & URB_CORNER_MASK) >> 30) |
-                       (((masked_corners & URF_CORNER_MASK) >> 18) | ((masked_corners & DRB_CORNER_MASK) << 18) |
-                        ((masked_corners & DRF_CORNER_MASK) << 30))) |
+            corners = (((masked_corners & URB_CORNER_MASK) >> (5 * CORNER_WIDTH)) |
+                       (((masked_corners & URF_CORNER_MASK) >> (3 * CORNER_WIDTH)) |
+                        ((masked_corners & DRB_CORNER_MASK) << (3 * CORNER_WIDTH)) |
+                        ((masked_corners & DRF_CORNER_MASK) << (5 * CORNER_WIDTH)))) |
                       (corners & ~RIGHT_CORNER_MASK);
-            edges = (((masked_edges & UR_EDGE_MASK) >> 40) |
-                     (((masked_edges & FR_EDGE_MASK) >> 10) | ((masked_edges & BR_EDGE_MASK) << 10) |
-                      ((masked_edges & DR_EDGE_MASK) << 40))) |
+
+            edges = (((masked_edges & UR_EDGE_MASK) >> (8 * EDGE_WIDTH)) |
+                     (((masked_edges & FR_EDGE_MASK) >> (2 * EDGE_WIDTH)) |
+                      ((masked_edges & BR_EDGE_MASK) << (2 * EDGE_WIDTH)) |
+                      ((masked_edges & DR_EDGE_MASK) << (8 * EDGE_WIDTH)))) |
                     (edges & ~RIGHT_EDGE_MASK);
             break;
         }
@@ -143,37 +231,48 @@ void rubicks_3x3::rotate(face f, direction d)
         switch (d)
         {
         case CLOCKWISE:
-            corners = ((((masked_corners & ULB_CORNER_MASK) >> 18) |
-                        (((masked_corners & ULF_CORNER_MASK) >> 24) | ((masked_corners & DLB_CORNER_MASK) << 24) |
-                         ((masked_corners & DLF_CORNER_MASK) << 18))) &
+            corners = ((((masked_corners & ULB_CORNER_MASK) >> (3 * CORNER_WIDTH)) |
+                        (((masked_corners & ULF_CORNER_MASK) >> (4 * CORNER_WIDTH)) |
+                         ((masked_corners & DLB_CORNER_MASK) << (4 * CORNER_WIDTH)) |
+                         ((masked_corners & DLF_CORNER_MASK) << (3 * CORNER_WIDTH)))) &
                        LEFT_CORNER_MASK) |
                       (corners & ~LEFT_CORNER_MASK);
-            adjust_orientations(corners, LEFT_CORNER_ORIENTATION_ADJUSTMENT);
-            edges = (((masked_edges & UL_EDGE_MASK) >> 10) |
-                     (((masked_edges & FL_EDGE_MASK) >> 30) | ((masked_edges & BL_EDGE_MASK) << 20) |
-                      ((masked_edges & DL_EDGE_MASK) << 20))) |
+
+            adjust_orientations(LEFT_CORNER_ORIENTATION_ADJUSTMENT);
+
+            edges = (((masked_edges & UL_EDGE_MASK) >> (2 * EDGE_WIDTH)) |
+                     (((masked_edges & FL_EDGE_MASK) >> (6 * EDGE_WIDTH)) |
+                      ((masked_edges & BL_EDGE_MASK) << (4 * EDGE_WIDTH)) |
+                      ((masked_edges & DL_EDGE_MASK) << (4 * EDGE_WIDTH)))) |
                     (edges & ~LEFT_EDGE_MASK);
             break;
         case COUNTER_CLOCKWISE:
-            corners = ((((masked_corners & ULB_CORNER_MASK) >> 24) |
-                        (((masked_corners & ULF_CORNER_MASK) << 18) | ((masked_corners & DLB_CORNER_MASK) >> 18) |
-                         ((masked_corners & DLF_CORNER_MASK) << 24))) &
+            corners = ((((masked_corners & ULB_CORNER_MASK) >> (4 * CORNER_WIDTH)) |
+                        (((masked_corners & ULF_CORNER_MASK) << (3 * CORNER_WIDTH)) |
+                         ((masked_corners & DLB_CORNER_MASK) >> (3 * CORNER_WIDTH)) |
+                         ((masked_corners & DLF_CORNER_MASK) << (4 * CORNER_WIDTH)))) &
                        LEFT_CORNER_MASK) |
                       (corners & ~LEFT_CORNER_MASK);
-            adjust_orientations(corners, LEFT_CORNER_ORIENTATION_ADJUSTMENT);
-            edges = (((masked_edges & UL_EDGE_MASK) >> 20) |
-                     (((masked_edges & FL_EDGE_MASK) << 10) | ((masked_edges & BL_EDGE_MASK) >> 20) |
-                      ((masked_edges & DL_EDGE_MASK) << 30))) |
+
+            adjust_orientations(LEFT_CORNER_ORIENTATION_ADJUSTMENT);
+
+            edges = (((masked_edges & UL_EDGE_MASK) >> (4 * EDGE_WIDTH)) |
+                     (((masked_edges & FL_EDGE_MASK) << (2 * EDGE_WIDTH)) |
+                      ((masked_edges & BL_EDGE_MASK) >> (4 * EDGE_WIDTH)) |
+                      ((masked_edges & DL_EDGE_MASK) << (6 * EDGE_WIDTH)))) |
                     (edges & ~LEFT_EDGE_MASK);
             break;
         case DOUBLE:
-            corners = (((masked_corners & ULB_CORNER_MASK) >> 42) |
-                       (((masked_corners & ULF_CORNER_MASK) >> 6) | ((masked_corners & DLB_CORNER_MASK) << 6) |
-                        ((masked_corners & DLF_CORNER_MASK) << 42))) |
+            corners = (((masked_corners & ULB_CORNER_MASK) >> (7 * CORNER_WIDTH)) |
+                       (((masked_corners & ULF_CORNER_MASK) >> CORNER_WIDTH) |
+                        ((masked_corners & DLB_CORNER_MASK) << CORNER_WIDTH) |
+                        ((masked_corners & DLF_CORNER_MASK) << (7 * CORNER_WIDTH)))) |
                       (corners & ~LEFT_CORNER_MASK);
-            edges = (((masked_edges & UL_EDGE_MASK) >> 40) |
-                     (((masked_edges & FL_EDGE_MASK) >> 10) | ((masked_edges & BL_EDGE_MASK) << 10) |
-                      ((masked_edges & DL_EDGE_MASK) << 40))) |
+
+            edges = (((masked_edges & UL_EDGE_MASK) >> (8 * EDGE_WIDTH)) |
+                     (((masked_edges & FL_EDGE_MASK) >> (2 * EDGE_WIDTH)) |
+                      ((masked_edges & BL_EDGE_MASK) << (2 * EDGE_WIDTH)) |
+                      ((masked_edges & DL_EDGE_MASK) << (8 * EDGE_WIDTH)))) |
                     (edges & ~LEFT_EDGE_MASK);
             break;
         }
@@ -184,39 +283,51 @@ void rubicks_3x3::rotate(face f, direction d)
         switch (d)
         {
         case CLOCKWISE:
-            corners = ((((masked_corners & URF_CORNER_MASK) >> 24) |
-                        (((masked_corners & ULF_CORNER_MASK) << 6) | ((masked_corners & DRF_CORNER_MASK) >> 6) |
-                         ((masked_corners & DLF_CORNER_MASK) << 24))) &
+            corners = ((((masked_corners & URF_CORNER_MASK) >> (4 * CORNER_WIDTH)) |
+                        (((masked_corners & ULF_CORNER_MASK) << CORNER_WIDTH) |
+                         ((masked_corners & DRF_CORNER_MASK) >> CORNER_WIDTH) |
+                         ((masked_corners & DLF_CORNER_MASK) << (4 * CORNER_WIDTH)))) &
                        FRONT_CORNER_MASK) |
                       (corners & ~FRONT_CORNER_MASK);
-            adjust_orientations(corners, FRONT_CORNER_ORIENTATION_ADJUSTMENT);
-            edges = (((masked_edges & UF_EDGE_MASK) >> 10) |
-                     (((masked_edges & FR_EDGE_MASK) >> 30) | ((masked_edges & FL_EDGE_MASK) << 15) |
-                      ((masked_edges & DF_EDGE_MASK) << 25))) |
+
+            adjust_orientations(FRONT_CORNER_ORIENTATION_ADJUSTMENT);
+
+            edges = (((masked_edges & UF_EDGE_MASK) >> (2 * EDGE_WIDTH)) |
+                     (((masked_edges & FR_EDGE_MASK) >> (6 * EDGE_WIDTH)) |
+                      ((masked_edges & FL_EDGE_MASK) << (3 * EDGE_WIDTH)) |
+                      ((masked_edges & DF_EDGE_MASK) << (5 * EDGE_WIDTH)))) |
                     (edges & ~FRONT_EDGE_MASK);
+
             edges ^= FRONT_EDGE_ORIENTATION_ADJUSTMENT;
             break;
         case COUNTER_CLOCKWISE:
-            corners = ((((masked_corners & URF_CORNER_MASK) >> 6) |
-                        (((masked_corners & ULF_CORNER_MASK) >> 24) | ((masked_corners & DRF_CORNER_MASK) << 24) |
-                         ((masked_corners & DLF_CORNER_MASK) << 6))) &
+            corners = ((((masked_corners & URF_CORNER_MASK) >> CORNER_WIDTH) |
+                        (((masked_corners & ULF_CORNER_MASK) >> (4 * CORNER_WIDTH)) |
+                         ((masked_corners & DRF_CORNER_MASK) << (4 * CORNER_WIDTH)) |
+                         ((masked_corners & DLF_CORNER_MASK) << CORNER_WIDTH))) &
                        FRONT_CORNER_MASK) |
                       (corners & ~FRONT_CORNER_MASK);
-            adjust_orientations(corners, FRONT_CORNER_ORIENTATION_ADJUSTMENT);
-            edges = (((masked_edges & UF_EDGE_MASK) >> 15) |
-                     (((masked_edges & FR_EDGE_MASK) << 10) | ((masked_edges & FL_EDGE_MASK) >> 25) |
-                      ((masked_edges & DF_EDGE_MASK) << 30))) |
+
+            adjust_orientations(FRONT_CORNER_ORIENTATION_ADJUSTMENT);
+
+            edges = (((masked_edges & UF_EDGE_MASK) >> (3 * EDGE_WIDTH)) |
+                     (((masked_edges & FR_EDGE_MASK) << (2 * EDGE_WIDTH)) |
+                      ((masked_edges & FL_EDGE_MASK) >> (5 * EDGE_WIDTH)) |
+                      ((masked_edges & DF_EDGE_MASK) << (6 * EDGE_WIDTH)))) |
                     (edges & ~FRONT_EDGE_MASK);
+
             edges ^= FRONT_EDGE_ORIENTATION_ADJUSTMENT;
             break;
         case DOUBLE:
-            corners = (((masked_corners & URF_CORNER_MASK) >> 30) |
-                       (((masked_corners & ULF_CORNER_MASK) >> 18) | ((masked_corners & DRF_CORNER_MASK) << 18) |
-                        ((masked_corners & DLF_CORNER_MASK) << 30))) |
+            corners = (((masked_corners & URF_CORNER_MASK) >> (5 * CORNER_WIDTH)) |
+                       (((masked_corners & ULF_CORNER_MASK) >> (3 * CORNER_WIDTH)) |
+                        ((masked_corners & DRF_CORNER_MASK) << (3 * CORNER_WIDTH)) |
+                        ((masked_corners & DLF_CORNER_MASK) << (5 * CORNER_WIDTH)))) |
                       (corners & ~FRONT_CORNER_MASK);
-            edges = (((masked_edges & UF_EDGE_MASK) >> 40) |
-                     (((masked_edges & FR_EDGE_MASK) >> 5) | ((masked_edges & FL_EDGE_MASK) << 5) |
-                      ((masked_edges & DF_EDGE_MASK) << 40))) |
+
+            edges = (((masked_edges & UF_EDGE_MASK) >> (8 * EDGE_WIDTH)) |
+                     (((masked_edges & FR_EDGE_MASK) >> EDGE_WIDTH) | ((masked_edges & FL_EDGE_MASK) << EDGE_WIDTH) |
+                      ((masked_edges & DF_EDGE_MASK) << (8 * EDGE_WIDTH)))) |
                     (edges & ~FRONT_EDGE_MASK);
             break;
         }
@@ -227,39 +338,51 @@ void rubicks_3x3::rotate(face f, direction d)
         switch (d)
         {
         case CLOCKWISE:
-            corners = ((((masked_corners & ULB_CORNER_MASK) >> 24) |
-                        (((masked_corners & URB_CORNER_MASK) << 6) | ((masked_corners & DLB_CORNER_MASK) >> 6) |
-                         ((masked_corners & DRB_CORNER_MASK) << 24))) &
+            corners = ((((masked_corners & ULB_CORNER_MASK) >> (4 * CORNER_WIDTH)) |
+                        (((masked_corners & URB_CORNER_MASK) << CORNER_WIDTH) |
+                         ((masked_corners & DLB_CORNER_MASK) >> CORNER_WIDTH) |
+                         ((masked_corners & DRB_CORNER_MASK) << (4 * CORNER_WIDTH)))) &
                        BACK_CORNER_MASK) |
                       (corners & ~BACK_CORNER_MASK);
-            adjust_orientations(corners, BACK_CORNER_ORIENTATION_ADJUSTMENT);
-            edges = (((masked_edges & UB_EDGE_MASK) >> 35) |
-                     (((masked_edges & BR_EDGE_MASK) << 30) | ((masked_edges & BL_EDGE_MASK) >> 5) |
-                      ((masked_edges & DB_EDGE_MASK) << 10))) |
-                    (edges & ~BACK_EDGE_MASK);
+
+            adjust_orientations(BACK_CORNER_ORIENTATION_ADJUSTMENT);
+
+            edges =
+                (((masked_edges & UB_EDGE_MASK) >> (7 * EDGE_WIDTH)) |
+                 (((masked_edges & BR_EDGE_MASK) << (6 * EDGE_WIDTH)) | ((masked_edges & BL_EDGE_MASK) >> EDGE_WIDTH) |
+                  ((masked_edges & DB_EDGE_MASK) << (2 * EDGE_WIDTH)))) |
+                (edges & ~BACK_EDGE_MASK);
+
             edges ^= BACK_EDGE_ORIENTATION_ADJUSTMENT;
             break;
         case COUNTER_CLOCKWISE:
-            corners = ((((masked_corners & ULB_CORNER_MASK) >> 6) |
-                        (((masked_corners & URB_CORNER_MASK) >> 24) | ((masked_corners & DLB_CORNER_MASK) << 24) |
-                         ((masked_corners & DRB_CORNER_MASK) << 6))) &
+            corners = ((((masked_corners & ULB_CORNER_MASK) >> CORNER_WIDTH) |
+                        (((masked_corners & URB_CORNER_MASK) >> (4 * CORNER_WIDTH)) |
+                         ((masked_corners & DLB_CORNER_MASK) << (4 * CORNER_WIDTH)) |
+                         ((masked_corners & DRB_CORNER_MASK) << CORNER_WIDTH))) &
                        BACK_CORNER_MASK) |
                       (corners & ~BACK_CORNER_MASK);
-            adjust_orientations(corners, BACK_CORNER_ORIENTATION_ADJUSTMENT);
-            edges = (((masked_edges & UB_EDGE_MASK) >> 30) |
-                     (((masked_edges & BR_EDGE_MASK) >> 10) | ((masked_edges & BL_EDGE_MASK) << 35) |
-                      ((masked_edges & DB_EDGE_MASK) << 5))) |
+
+            adjust_orientations(BACK_CORNER_ORIENTATION_ADJUSTMENT);
+
+            edges = (((masked_edges & UB_EDGE_MASK) >> (6 * EDGE_WIDTH)) |
+                     (((masked_edges & BR_EDGE_MASK) >> (2 * EDGE_WIDTH)) |
+                      ((masked_edges & BL_EDGE_MASK) << (7 * EDGE_WIDTH)) |
+                      ((masked_edges & DB_EDGE_MASK) << EDGE_WIDTH))) |
                     (edges & ~BACK_EDGE_MASK);
+
             edges ^= BACK_EDGE_ORIENTATION_ADJUSTMENT;
             break;
         case DOUBLE:
-            corners = (((masked_corners & ULB_CORNER_MASK) >> 30) |
-                       (((masked_corners & URB_CORNER_MASK) >> 18) | ((masked_corners & DLB_CORNER_MASK) << 18) |
-                        ((masked_corners & DRB_CORNER_MASK) << 30))) |
+            corners = (((masked_corners & ULB_CORNER_MASK) >> (5 * CORNER_WIDTH)) |
+                       (((masked_corners & URB_CORNER_MASK) >> (3 * CORNER_WIDTH)) |
+                        ((masked_corners & DLB_CORNER_MASK) << (3 * CORNER_WIDTH)) |
+                        ((masked_corners & DRB_CORNER_MASK) << (5 * CORNER_WIDTH)))) |
                       (corners & ~BACK_CORNER_MASK);
-            edges = (((masked_edges & UB_EDGE_MASK) >> 40) |
-                     (((masked_edges & BR_EDGE_MASK) >> 5) | ((masked_edges & BL_EDGE_MASK) << 5) |
-                      ((masked_edges & DB_EDGE_MASK) << 40))) |
+
+            edges = (((masked_edges & UB_EDGE_MASK) >> (8 * EDGE_WIDTH)) |
+                     (((masked_edges & BR_EDGE_MASK) >> EDGE_WIDTH) | ((masked_edges & BL_EDGE_MASK) << EDGE_WIDTH) |
+                      ((masked_edges & DB_EDGE_MASK) << (8 * EDGE_WIDTH)))) |
                     (edges & ~BACK_EDGE_MASK);
             break;
         }
@@ -270,22 +393,40 @@ void rubicks_3x3::rotate(face f, direction d)
         switch (d)
         {
         case CLOCKWISE:
-            corners =
-                (((masked_corners << 6) & DOWN_CORNER_MASK) | (masked_corners >> 18)) | (corners & ~DOWN_CORNER_MASK);
-            edges = (((masked_edges << 5) | (masked_edges >> 15)) & DOWN_EDGE_MASK) | (edges & ~DOWN_EDGE_MASK);
+            corners = (((masked_corners << CORNER_WIDTH) & DOWN_CORNER_MASK) | (masked_corners >> (3 * CORNER_WIDTH))) |
+                      (corners & ~DOWN_CORNER_MASK);
+
+            edges = (((masked_edges << EDGE_WIDTH) | (masked_edges >> (3 * EDGE_WIDTH))) & DOWN_EDGE_MASK) |
+                    (edges & ~DOWN_EDGE_MASK);
             break;
         case COUNTER_CLOCKWISE:
-            corners =
-                ((masked_corners >> 6) | ((masked_corners << 18) & DOWN_CORNER_MASK)) | (corners & ~DOWN_CORNER_MASK);
-            edges = (((masked_edges >> 5) | (masked_edges << 15)) & DOWN_EDGE_MASK) | (edges & ~DOWN_EDGE_MASK);
+            corners = ((masked_corners >> CORNER_WIDTH) | ((masked_corners << (3 * CORNER_WIDTH)) & DOWN_CORNER_MASK)) |
+                      (corners & ~DOWN_CORNER_MASK);
+
+            edges = (((masked_edges >> EDGE_WIDTH) | (masked_edges << (3 * EDGE_WIDTH))) & DOWN_EDGE_MASK) |
+                    (edges & ~DOWN_EDGE_MASK);
             break;
         case DOUBLE:
             corners =
-                (((masked_corners << 12) | (masked_corners >> 12)) & DOWN_CORNER_MASK) | (corners & ~DOWN_CORNER_MASK);
-            edges = (((masked_edges << 10) | (masked_edges >> 10)) & DOWN_EDGE_MASK) | (edges & ~DOWN_EDGE_MASK);
+                (((masked_corners << (2 * CORNER_WIDTH)) | (masked_corners >> (2 * CORNER_WIDTH))) & DOWN_CORNER_MASK) |
+                (corners & ~DOWN_CORNER_MASK);
+
+            edges = (((masked_edges << (2 * EDGE_WIDTH)) | (masked_edges >> (2 * EDGE_WIDTH))) & DOWN_EDGE_MASK) |
+                    (edges & ~DOWN_EDGE_MASK);
             break;
         }
         break;
+    }
+
+    if (!keep_blank_edge_orientations)
+    {
+        for (int i = 0; i < NUM_EDGES; i++)
+        {
+            if (((edges >> (EDGE_WIDTH * i)) & EDGE_MASK) == (NN | EDGE_ADJUSTMENT))
+            {
+                edges ^= (EDGE_ADJUSTMENT << (EDGE_WIDTH * i));
+            }
+        }
     }
 }
 
@@ -446,17 +587,29 @@ void rubicks_3x3::input_scramble(std::string scramble)
 
 int main()
 {
-    rubicks_3x3 cube;
-    std::string scramble;
-    while (true)
-    {
-        std::cout << "Enter your scramble: ";
-        std::getline(std::cin, scramble);
-        if (scramble == "q")
-            break;
-        cube.input_scramble(scramble);
-        cube.print_cube();
-    }
+    rubicks_3x3 cube(CASE_MIDDLE_SLICE_3X3, false);
+    cube.input_scramble("F");
+
+    std::cout << "Expected: " << std::bitset<60>(cube.edges) << "\n";
+
+    rubicks_3x3 cube2(CASE_MIDDLE_SLICE_3X3, true);
+    cube2.input_scramble("F");
+
+    std::cout << "Expected: " << std::bitset<60>(cube2.edges) << "\n";
+
+    // cube.print_cube();
+    // test_rotations();
+
+    // std::string scramble;
+    // while (true)
+    // {
+    //     std::cout << "Enter your scramble: ";
+    //     std::getline(std::cin, scramble);
+    //     if (scramble == "q")
+    //         break;
+    //     cube.input_scramble(scramble);
+    //     cube.print_cube();
+    // }
 
     return 0;
 }

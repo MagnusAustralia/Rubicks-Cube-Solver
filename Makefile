@@ -34,12 +34,17 @@ TARGET  := $(BUILD_DIR)/$(FILE)
 .PHONY: dfs 2x2 3x3 lehmer gen-corners gen-edges render run check check-raylib clean format format-check tidy lint
 
 # ---- Shortcuts: FILE + only the files it depends on ----
-dfs:         ; @$(MAKE) --no-print-directory run FILE=depth_first_search DEPS="generate_data lehmer_code rubicks_2x2 rubicks_3x3 generate_scramble" A="$(A)"
-2x2:         ; @$(MAKE) --no-print-directory run FILE=rubicks_2x2 DEPS="" A="$(A)"
-3x3:         ; @$(MAKE) --no-print-directory run FILE=rubicks_3x3 DEPS="rubicks_2x2" A="$(A)"
-lehmer:      ; @$(MAKE) --no-print-directory run FILE=lehmer_code DEPS="rubicks_2x2" A="$(A)"
-gen-corners: ; @$(MAKE) --no-print-directory run FILE=generate_data DEPS="lehmer_code rubicks_2x2 rubicks_3x3" A="corners $(A)"
-gen-edges:   ; @$(MAKE) --no-print-directory run FILE=generate_data DEPS="lehmer_code rubicks_2x2 rubicks_3x3" A="edges $(A)"
+dfs:         				; @$(MAKE) --no-print-directory run FILE=depth_first_search DEPS="generate_data lehmer_code rubicks_2x2 rubicks_3x3 generate_scramble" A="$(A)"
+2x2:         				; @$(MAKE) --no-print-directory run FILE=rubicks_2x2 DEPS="" A="$(A)"
+3x3:         				; @$(MAKE) --no-print-directory run FILE=rubicks_3x3 DEPS="rubicks_2x2" A="$(A)"
+lehmer:      				; @$(MAKE) --no-print-directory run FILE=lehmer_code DEPS="rubicks_2x2 rubicks_3x3" A="$(A)"
+gen-corners: 				; @$(MAKE) --no-print-directory run FILE=generate_data DEPS="lehmer_code rubicks_2x2 rubicks_3x3" A="corners $(A)"
+gen-edges-1:   				; @$(MAKE) --no-print-directory run FILE=generate_data DEPS="lehmer_code rubicks_2x2 rubicks_3x3" A="edges-1 $(A)"
+gen-edges-2:   				; @$(MAKE) --no-print-directory run FILE=generate_data DEPS="lehmer_code rubicks_2x2 rubicks_3x3" A="edges-2 $(A)"
+gen-corners-slices:			; @$(MAKE) --no-print-directory run FILE=generate_data DEPS="lehmer_code rubicks_2x2 rubicks_3x3" A="corners-slice $(A)"
+gen-edges-slices: 			; @$(MAKE) --no-print-directory run FILE=generate_data DEPS="lehmer_code rubicks_2x2 rubicks_3x3" A="edges-slice $(A)"
+gen-corners-slices-perm:	; @$(MAKE) --no-print-directory run FILE=generate_data DEPS="lehmer_code rubicks_2x2 rubicks_3x3" A="corners-slices-perm $(A)"
+gen-edges-slices-perm: 		; @$(MAKE) --no-print-directory run FILE=generate_data DEPS="lehmer_code rubicks_2x2 rubicks_3x3" A="edges-slices-perm $(A)"
 
 # Build and run render.cpp with raylib. Override DEPS if render only needs some files,
 # e.g. `make render DEPS="rubicks_2x2 rubicks_3x3"`.
@@ -78,7 +83,7 @@ format-check:
 
 # Static analysis on every source file (uses .clang-tidy)
 tidy:
-	$(CLANG_TIDY) $(SRCS) -- -std=c++17 -I$(INCLUDE_DIR)
+	$(CLANG_TIDY) $(SRCS) -- -std=c++17 -I$(INCLUDE_DIR) $(RAYLIB_CPPFLAGS)
 
 # Run both checks
 lint: format-check tidy

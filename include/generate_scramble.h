@@ -6,6 +6,6 @@
 
 bool prune(moves new_move, moves previous_moves);
 
-std::string generate_scramble(int num_moves = 50);
+std::string generate_scramble(const int NUM_MOVES = 50);
 
 #endif

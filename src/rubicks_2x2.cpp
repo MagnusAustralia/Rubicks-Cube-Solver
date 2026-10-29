@@ -4,7 +4,7 @@
 #include <iostream>
 #include <sstream>
 
-bool test_orientations()
+bool test_rotations()
 {
     rubicks_2x2 cube;
     bool is_valid = true;
@@ -27,6 +27,11 @@ bool test_orientations()
                 std::cout << "Actual:   " << std::bitset<64>(cube.corners) << "\n";
             }
         }
+    }
+
+    if (is_valid)
+    {
+        std::cout << "All tests passed!!\n";
     }
 
     return is_valid;
@@ -174,34 +179,33 @@ bool rubicks_2x2::is_solved()
 void rubicks_2x2::update_corners()
 {
     uint64_t remaining_corners = corners;
-    const uint64_t CORNER_MASK = 0b111;
-    const uint64_t ORIENTATION_MASK = 0b11000;
 
-    for (int i = 7; i >= 0; i--)
+    for (int i = NUM_CORNERS - 1; i >= 0; i--)
     {
-        corners_list[i] = get_corner(static_cast<corner>((uint8_t)(CORNER_MASK & remaining_corners)),
-                                     static_cast<orientation>((uint8_t)((ORIENTATION_MASK & remaining_corners) >> 3)));
-        remaining_corners >>= 6;
+        corners_list[i] = get_corner(static_cast<corner>((uint8_t)(CORNER_PIECE_MASK & remaining_corners)),
+                                     static_cast<orientation>((uint8_t)((CORNER_ORIENTATION_MASK & remaining_corners) >>
+                                                                        CORNER_ORIENTATION_SHIFT)));
+        remaining_corners >>= CORNER_WIDTH;
     }
 }
 
-void rubicks_2x2::adjust_orientations(uint64_t &corners, uint64_t adjustment)
+void rubicks_2x2::adjust_orientations(uint64_t adjustment)
 {
-    const uint64_t ORIENTATION_MASK = 0b11000;
-
-    for (int i = 0; i < 8; i++)
+    for (int i = 0; i < NUM_CORNERS; i++)
     {
-        if (adjustment & ORIENTATION_MASK)
+        if (adjustment & CORNER_ORIENTATION_MASK)
         {
-            int initial_orientation = ((corners >> (6 * i)) & ORIENTATION_MASK) >> 3;
+            int initial_orientation =
+                ((corners >> (CORNER_WIDTH * i)) & CORNER_ORIENTATION_MASK) >> CORNER_ORIENTATION_SHIFT;
 
-            int new_orientation = (adjustment & ORIENTATION_MASK) >> 3;
+            int new_orientation = (adjustment & CORNER_ORIENTATION_MASK) >> CORNER_ORIENTATION_SHIFT;
 
-            new_orientation = (initial_orientation + new_orientation) % 3;
+            new_orientation = (initial_orientation + new_orientation) % NUM_CORNER_ORIENTATIONS;
 
-            corners = (corners & ~(ORIENTATION_MASK << (6 * i))) | ((uint64_t)new_orientation << (3 + 6 * i));
+            corners = (corners & ~(CORNER_ORIENTATION_MASK << (CORNER_WIDTH * i))) |
+                      ((uint64_t)new_orientation << (CORNER_ORIENTATION_SHIFT + CORNER_WIDTH * i));
         }
-        adjustment >>= 6;
+        adjustment >>= CORNER_WIDTH;
     }
 }
 
@@ -217,17 +221,19 @@ void rubicks_2x2::rotate(face f, direction d)
         {
         case CLOCKWISE:
             // std::cout << "Up Clockwise Turn" << "\n";
-            corners =
-                (((masked_corners >> 6) | ((masked_corners << 18))) & UP_CORNER_MASK) | (corners & ~UP_CORNER_MASK);
+            corners = (((masked_corners >> CORNER_WIDTH) | ((masked_corners << (3 * CORNER_WIDTH)))) & UP_CORNER_MASK) |
+                      (corners & ~UP_CORNER_MASK);
             break;
         case COUNTER_CLOCKWISE:
             // std::cout << "Up Counter-Clockwise Turn" << "\n";
-            corners = (((masked_corners << 6) | (masked_corners >> 18)) & UP_CORNER_MASK) | (corners & ~UP_CORNER_MASK);
+            corners = (((masked_corners << CORNER_WIDTH) | (masked_corners >> (3 * CORNER_WIDTH))) & UP_CORNER_MASK) |
+                      (corners & ~UP_CORNER_MASK);
             break;
         case DOUBLE:
             // std::cout << "Up Double Turn" << "\n";
             corners =
-                (((masked_corners << 12) | (masked_corners >> 12)) & UP_CORNER_MASK) | (corners & ~UP_CORNER_MASK);
+                (((masked_corners << (2 * CORNER_WIDTH)) | (masked_corners >> (2 * CORNER_WIDTH))) & UP_CORNER_MASK) |
+                (corners & ~UP_CORNER_MASK);
             break;
         }
         break;
@@ -237,27 +243,30 @@ void rubicks_2x2::rotate(face f, direction d)
         {
         case CLOCKWISE:
             // std::cout << "Right Clockwise Turn" << "\n";
-            corners = ((((masked_corners & URB_CORNER_MASK) >> 24) |
-                        (((masked_corners & URF_CORNER_MASK) << 6) | ((masked_corners & DRB_CORNER_MASK) >> 6) |
-                         ((masked_corners & DRF_CORNER_MASK) << 24))) &
+            corners = ((((masked_corners & URB_CORNER_MASK) >> (4 * CORNER_WIDTH)) |
+                        (((masked_corners & URF_CORNER_MASK) << CORNER_WIDTH) |
+                         ((masked_corners & DRB_CORNER_MASK) >> CORNER_WIDTH) |
+                         ((masked_corners & DRF_CORNER_MASK) << (4 * CORNER_WIDTH)))) &
                        RIGHT_CORNER_MASK) |
                       (corners & ~RIGHT_CORNER_MASK);
-            adjust_orientations(corners, RIGHT_CORNER_ORIENTATION_ADJUSTMENT);
+            adjust_orientations(RIGHT_CORNER_ORIENTATION_ADJUSTMENT);
             break;
         case COUNTER_CLOCKWISE:
             // std::cout << "Right Counter-Clockwise Turn" << "\n";
-            corners = ((((masked_corners & URB_CORNER_MASK) >> 6) |
-                        (((masked_corners & URF_CORNER_MASK) >> 24) | ((masked_corners & DRB_CORNER_MASK) << 24) |
-                         ((masked_corners & DRF_CORNER_MASK) << 6))) &
+            corners = ((((masked_corners & URB_CORNER_MASK) >> CORNER_WIDTH) |
+                        (((masked_corners & URF_CORNER_MASK) >> (4 * CORNER_WIDTH)) |
+                         ((masked_corners & DRB_CORNER_MASK) << (4 * CORNER_WIDTH)) |
+                         ((masked_corners & DRF_CORNER_MASK) << CORNER_WIDTH))) &
                        RIGHT_CORNER_MASK) |
                       (corners & ~RIGHT_CORNER_MASK);
-            adjust_orientations(corners, RIGHT_CORNER_ORIENTATION_ADJUSTMENT);
+            adjust_orientations(RIGHT_CORNER_ORIENTATION_ADJUSTMENT);
             break;
         case DOUBLE:
             // std::cout << "Right Double Turn" << "\n";
-            corners = (((masked_corners & URB_CORNER_MASK) >> 30) |
-                       (((masked_corners & URF_CORNER_MASK) >> 18) | ((masked_corners & DRB_CORNER_MASK) << 18) |
-                        ((masked_corners & DRF_CORNER_MASK) << 30))) |
+            corners = (((masked_corners & URB_CORNER_MASK) >> (5 * CORNER_WIDTH)) |
+                       (((masked_corners & URF_CORNER_MASK) >> (3 * CORNER_WIDTH)) |
+                        ((masked_corners & DRB_CORNER_MASK) << (3 * CORNER_WIDTH)) |
+                        ((masked_corners & DRF_CORNER_MASK) << (5 * CORNER_WIDTH)))) |
                       (corners & ~RIGHT_CORNER_MASK);
             break;
         }
@@ -268,27 +277,30 @@ void rubicks_2x2::rotate(face f, direction d)
         {
         case CLOCKWISE:
             // std::cout << "Left Clockwise Turn" << "\n";
-            corners = ((((masked_corners & ULB_CORNER_MASK) >> 18) |
-                        (((masked_corners & ULF_CORNER_MASK) >> 24) | ((masked_corners & DLB_CORNER_MASK) << 24) |
-                         ((masked_corners & DLF_CORNER_MASK) << 18))) &
+            corners = ((((masked_corners & ULB_CORNER_MASK) >> (3 * CORNER_WIDTH)) |
+                        (((masked_corners & ULF_CORNER_MASK) >> (4 * CORNER_WIDTH)) |
+                         ((masked_corners & DLB_CORNER_MASK) << (4 * CORNER_WIDTH)) |
+                         ((masked_corners & DLF_CORNER_MASK) << (3 * CORNER_WIDTH)))) &
                        LEFT_CORNER_MASK) |
                       (corners & ~LEFT_CORNER_MASK);
-            adjust_orientations(corners, LEFT_CORNER_ORIENTATION_ADJUSTMENT);
+            adjust_orientations(LEFT_CORNER_ORIENTATION_ADJUSTMENT);
             break;
         case COUNTER_CLOCKWISE:
             // std::cout << "Left Counter-Clockwise Turn" << "\n";
-            corners = ((((masked_corners & ULB_CORNER_MASK) >> 24) |
-                        (((masked_corners & ULF_CORNER_MASK) << 18) | ((masked_corners & DLB_CORNER_MASK) >> 18) |
-                         ((masked_corners & DLF_CORNER_MASK) << 24))) &
+            corners = ((((masked_corners & ULB_CORNER_MASK) >> (4 * CORNER_WIDTH)) |
+                        (((masked_corners & ULF_CORNER_MASK) << (3 * CORNER_WIDTH)) |
+                         ((masked_corners & DLB_CORNER_MASK) >> (3 * CORNER_WIDTH)) |
+                         ((masked_corners & DLF_CORNER_MASK) << (4 * CORNER_WIDTH)))) &
                        LEFT_CORNER_MASK) |
                       (corners & ~LEFT_CORNER_MASK);
-            adjust_orientations(corners, LEFT_CORNER_ORIENTATION_ADJUSTMENT);
+            adjust_orientations(LEFT_CORNER_ORIENTATION_ADJUSTMENT);
             break;
         case DOUBLE:
             // std::cout << "Left Double Turn" << "\n";
-            corners = (((masked_corners & ULB_CORNER_MASK) >> 42) |
-                       (((masked_corners & ULF_CORNER_MASK) >> 6) | ((masked_corners & DLB_CORNER_MASK) << 6) |
-                        ((masked_corners & DLF_CORNER_MASK) << 42))) |
+            corners = (((masked_corners & ULB_CORNER_MASK) >> (7 * CORNER_WIDTH)) |
+                       (((masked_corners & ULF_CORNER_MASK) >> CORNER_WIDTH) |
+                        ((masked_corners & DLB_CORNER_MASK) << CORNER_WIDTH) |
+                        ((masked_corners & DLF_CORNER_MASK) << (7 * CORNER_WIDTH)))) |
                       (corners & ~LEFT_CORNER_MASK);
             break;
         }
@@ -299,27 +311,30 @@ void rubicks_2x2::rotate(face f, direction d)
         {
         case CLOCKWISE:
             // std::cout << "Front Clockwise Turn" << "\n";
-            corners = ((((masked_corners & URF_CORNER_MASK) >> 24) |
-                        (((masked_corners & ULF_CORNER_MASK) << 6) | ((masked_corners & DRF_CORNER_MASK) >> 6) |
-                         ((masked_corners & DLF_CORNER_MASK) << 24))) &
+            corners = ((((masked_corners & URF_CORNER_MASK) >> (4 * CORNER_WIDTH)) |
+                        (((masked_corners & ULF_CORNER_MASK) << CORNER_WIDTH) |
+                         ((masked_corners & DRF_CORNER_MASK) >> CORNER_WIDTH) |
+                         ((masked_corners & DLF_CORNER_MASK) << (4 * CORNER_WIDTH)))) &
                        FRONT_CORNER_MASK) |
                       (corners & ~FRONT_CORNER_MASK);
-            adjust_orientations(corners, FRONT_CORNER_ORIENTATION_ADJUSTMENT);
+            adjust_orientations(FRONT_CORNER_ORIENTATION_ADJUSTMENT);
             break;
         case COUNTER_CLOCKWISE:
             // std::cout << "Front Counter-Clockwise Turn" << "\n";
-            corners = ((((masked_corners & URF_CORNER_MASK) >> 6) |
-                        (((masked_corners & ULF_CORNER_MASK) >> 24) | ((masked_corners & DRF_CORNER_MASK) << 24) |
-                         ((masked_corners & DLF_CORNER_MASK) << 6))) &
+            corners = ((((masked_corners & URF_CORNER_MASK) >> CORNER_WIDTH) |
+                        (((masked_corners & ULF_CORNER_MASK) >> (4 * CORNER_WIDTH)) |
+                         ((masked_corners & DRF_CORNER_MASK) << (4 * CORNER_WIDTH)) |
+                         ((masked_corners & DLF_CORNER_MASK) << CORNER_WIDTH))) &
                        FRONT_CORNER_MASK) |
                       (corners & ~FRONT_CORNER_MASK);
-            adjust_orientations(corners, FRONT_CORNER_ORIENTATION_ADJUSTMENT);
+            adjust_orientations(FRONT_CORNER_ORIENTATION_ADJUSTMENT);
             break;
         case DOUBLE:
             // std::cout << "Front Double Turn" << "\n";
-            corners = (((masked_corners & URF_CORNER_MASK) >> 30) |
-                       (((masked_corners & ULF_CORNER_MASK) >> 18) | ((masked_corners & DRF_CORNER_MASK) << 18) |
-                        ((masked_corners & DLF_CORNER_MASK) << 30))) |
+            corners = (((masked_corners & URF_CORNER_MASK) >> (5 * CORNER_WIDTH)) |
+                       (((masked_corners & ULF_CORNER_MASK) >> (3 * CORNER_WIDTH)) |
+                        ((masked_corners & DRF_CORNER_MASK) << (3 * CORNER_WIDTH)) |
+                        ((masked_corners & DLF_CORNER_MASK) << (5 * CORNER_WIDTH)))) |
                       (corners & ~FRONT_CORNER_MASK);
             break;
         }
@@ -330,27 +345,30 @@ void rubicks_2x2::rotate(face f, direction d)
         {
         case CLOCKWISE:
             // std::cout << "Back Clockwise Turn" << "\n";
-            corners = ((((masked_corners & ULB_CORNER_MASK) >> 24) |
-                        (((masked_corners & URB_CORNER_MASK) << 6) | ((masked_corners & DLB_CORNER_MASK) >> 6) |
-                         ((masked_corners & DRB_CORNER_MASK) << 24))) &
+            corners = ((((masked_corners & ULB_CORNER_MASK) >> (4 * CORNER_WIDTH)) |
+                        (((masked_corners & URB_CORNER_MASK) << CORNER_WIDTH) |
+                         ((masked_corners & DLB_CORNER_MASK) >> CORNER_WIDTH) |
+                         ((masked_corners & DRB_CORNER_MASK) << (4 * CORNER_WIDTH)))) &
                        BACK_CORNER_MASK) |
                       (corners & ~BACK_CORNER_MASK);
-            adjust_orientations(corners, BACK_CORNER_ORIENTATION_ADJUSTMENT);
+            adjust_orientations(BACK_CORNER_ORIENTATION_ADJUSTMENT);
             break;
         case COUNTER_CLOCKWISE:
             // std::cout << "Back Counter-Clockwise Turn" << "\n";
-            corners = ((((masked_corners & ULB_CORNER_MASK) >> 6) |
-                        (((masked_corners & URB_CORNER_MASK) >> 24) | ((masked_corners & DLB_CORNER_MASK) << 24) |
-                         ((masked_corners & DRB_CORNER_MASK) << 6))) &
+            corners = ((((masked_corners & ULB_CORNER_MASK) >> CORNER_WIDTH) |
+                        (((masked_corners & URB_CORNER_MASK) >> (4 * CORNER_WIDTH)) |
+                         ((masked_corners & DLB_CORNER_MASK) << (4 * CORNER_WIDTH)) |
+                         ((masked_corners & DRB_CORNER_MASK) << CORNER_WIDTH))) &
                        BACK_CORNER_MASK) |
                       (corners & ~BACK_CORNER_MASK);
-            adjust_orientations(corners, BACK_CORNER_ORIENTATION_ADJUSTMENT);
+            adjust_orientations(BACK_CORNER_ORIENTATION_ADJUSTMENT);
             break;
         case DOUBLE:
             // std::cout << "Back Double Turn" << "\n";
-            corners = (((masked_corners & ULB_CORNER_MASK) >> 30) |
-                       (((masked_corners & URB_CORNER_MASK) >> 18) | ((masked_corners & DLB_CORNER_MASK) << 18) |
-                        ((masked_corners & DRB_CORNER_MASK) << 30))) |
+            corners = (((masked_corners & ULB_CORNER_MASK) >> (5 * CORNER_WIDTH)) |
+                       (((masked_corners & URB_CORNER_MASK) >> (3 * CORNER_WIDTH)) |
+                        ((masked_corners & DLB_CORNER_MASK) << (3 * CORNER_WIDTH)) |
+                        ((masked_corners & DRB_CORNER_MASK) << (5 * CORNER_WIDTH)))) |
                       (corners & ~BACK_CORNER_MASK);
             break;
         }
@@ -361,18 +379,19 @@ void rubicks_2x2::rotate(face f, direction d)
         {
         case CLOCKWISE:
             // std::cout << "Down Clockwise Turn" << "\n";
-            corners =
-                (((masked_corners << 6) & DOWN_CORNER_MASK) | (masked_corners >> 18)) | (corners & ~DOWN_CORNER_MASK);
+            corners = (((masked_corners << CORNER_WIDTH) & DOWN_CORNER_MASK) | (masked_corners >> (3 * CORNER_WIDTH))) |
+                      (corners & ~DOWN_CORNER_MASK);
             break;
         case COUNTER_CLOCKWISE:
             // std::cout << "Down Counter-Clockwise Turn" << "\n";
-            corners =
-                ((masked_corners >> 6) | ((masked_corners << 18) & DOWN_CORNER_MASK)) | (corners & ~DOWN_CORNER_MASK);
+            corners = ((masked_corners >> CORNER_WIDTH) | ((masked_corners << (3 * CORNER_WIDTH)) & DOWN_CORNER_MASK)) |
+                      (corners & ~DOWN_CORNER_MASK);
             break;
         case DOUBLE:
             // std::cout << "Down Double Turn" << "\n";
             corners =
-                (((masked_corners << 12) | (masked_corners >> 12)) & DOWN_CORNER_MASK) | (corners & ~DOWN_CORNER_MASK);
+                (((masked_corners << (2 * CORNER_WIDTH)) | (masked_corners >> (2 * CORNER_WIDTH))) & DOWN_CORNER_MASK) |
+                (corners & ~DOWN_CORNER_MASK);
             break;
         }
         break;
@@ -482,7 +501,7 @@ int main()
     //     cube.input_scramble(scramble);
     //     cube.print_cube();
     // }
-    test_orientations();
+    test_rotations();
 
     return 0;
 }
