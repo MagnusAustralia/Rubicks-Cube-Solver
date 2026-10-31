@@ -199,7 +199,7 @@ void generate_db(const pdb_type PDB)
     {
         num_possible_states = POSSIBLE_CORNER_STATES;
         filename = CORNERS_DB_FILENAME;
-        lehmer_data<8, 8, rubicks_2x2> indexer(variation);
+        lehmer_data<8, 8, rubicks_2x2> indexer;
         known_states[indexer.lehmer_index()] = 0;
         break;
     }

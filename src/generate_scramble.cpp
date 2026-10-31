@@ -1,58 +1,58 @@
 #include "../include/generate_scramble.h"
 #include "../include/rubicks_2x2.h"
 #include <cstdlib>
-#include <iostream>
+#include <string>
 
-bool prune(moves new_move, moves previous_moves)
+bool prune(moves new_move, moves previous_move)
 {
     // Adding the rule that moves must always follow the pattern of U -> D, R -> L, F -> B, and never the opposite
     switch (new_move)
     {
     case U:
-        return previous_moves == U || previous_moves == U_PRIME || previous_moves == U2 || previous_moves == D ||
-               previous_moves == D_PRIME || previous_moves == D2;
+        return previous_move == U || previous_move == U_PRIME || previous_move == U2 || previous_move == D ||
+               previous_move == D_PRIME || previous_move == D2;
     case U_PRIME:
-        return previous_moves == U || previous_moves == U_PRIME || previous_moves == U2 || previous_moves == D ||
-               previous_moves == D_PRIME || previous_moves == D2;
+        return previous_move == U || previous_move == U_PRIME || previous_move == U2 || previous_move == D ||
+               previous_move == D_PRIME || previous_move == D2;
     case U2:
-        return previous_moves == U || previous_moves == U_PRIME || previous_moves == U2 || previous_moves == D ||
-               previous_moves == D_PRIME || previous_moves == D2;
+        return previous_move == U || previous_move == U_PRIME || previous_move == U2 || previous_move == D ||
+               previous_move == D_PRIME || previous_move == D2;
     case R:
-        return previous_moves == R || previous_moves == R_PRIME || previous_moves == R2 || previous_moves == L ||
-               previous_moves == L_PRIME || previous_moves == L2;
+        return previous_move == R || previous_move == R_PRIME || previous_move == R2 || previous_move == L ||
+               previous_move == L_PRIME || previous_move == L2;
     case R_PRIME:
-        return previous_moves == R || previous_moves == R_PRIME || previous_moves == R2 || previous_moves == L ||
-               previous_moves == L_PRIME || previous_moves == L2;
+        return previous_move == R || previous_move == R_PRIME || previous_move == R2 || previous_move == L ||
+               previous_move == L_PRIME || previous_move == L2;
     case R2:
-        return previous_moves == R || previous_moves == R_PRIME || previous_moves == R2 || previous_moves == L ||
-               previous_moves == L_PRIME || previous_moves == L2;
+        return previous_move == R || previous_move == R_PRIME || previous_move == R2 || previous_move == L ||
+               previous_move == L_PRIME || previous_move == L2;
     case F:
-        return previous_moves == F || previous_moves == F_PRIME || previous_moves == F2 || previous_moves == B ||
-               previous_moves == B_PRIME || previous_moves == B2;
+        return previous_move == F || previous_move == F_PRIME || previous_move == F2 || previous_move == B ||
+               previous_move == B_PRIME || previous_move == B2;
     case F_PRIME:
-        return previous_moves == F || previous_moves == F_PRIME || previous_moves == F2 || previous_moves == B ||
-               previous_moves == B_PRIME || previous_moves == B2;
+        return previous_move == F || previous_move == F_PRIME || previous_move == F2 || previous_move == B ||
+               previous_move == B_PRIME || previous_move == B2;
     case F2:
-        return previous_moves == F || previous_moves == F_PRIME || previous_moves == F2 || previous_moves == B ||
-               previous_moves == B_PRIME || previous_moves == B2;
+        return previous_move == F || previous_move == F_PRIME || previous_move == F2 || previous_move == B ||
+               previous_move == B_PRIME || previous_move == B2;
     case L:
-        return previous_moves == L || previous_moves == L_PRIME || previous_moves == L2;
+        return previous_move == L || previous_move == L_PRIME || previous_move == L2;
     case L_PRIME:
-        return previous_moves == L || previous_moves == L_PRIME || previous_moves == L2;
+        return previous_move == L || previous_move == L_PRIME || previous_move == L2;
     case L2:
-        return previous_moves == L || previous_moves == L_PRIME || previous_moves == L2;
+        return previous_move == L || previous_move == L_PRIME || previous_move == L2;
     case B:
-        return previous_moves == B || previous_moves == B_PRIME || previous_moves == B2;
+        return previous_move == B || previous_move == B_PRIME || previous_move == B2;
     case B_PRIME:
-        return previous_moves == B || previous_moves == B_PRIME || previous_moves == B2;
+        return previous_move == B || previous_move == B_PRIME || previous_move == B2;
     case B2:
-        return previous_moves == B || previous_moves == B_PRIME || previous_moves == B2;
+        return previous_move == B || previous_move == B_PRIME || previous_move == B2;
     case D:
-        return previous_moves == D || previous_moves == D_PRIME || previous_moves == D2;
+        return previous_move == D || previous_move == D_PRIME || previous_move == D2;
     case D_PRIME:
-        return previous_moves == D || previous_moves == D_PRIME || previous_moves == D2;
+        return previous_move == D || previous_move == D_PRIME || previous_move == D2;
     case D2:
-        return previous_moves == D || previous_moves == D_PRIME || previous_moves == D2;
+        return previous_move == D || previous_move == D_PRIME || previous_move == D2;
     case INVALID_MOVE:
         return false;
     }
@@ -60,6 +60,11 @@ bool prune(moves new_move, moves previous_moves)
 
 std::string generate_scramble(const int NUM_MOVES_TO_GENERATE)
 {
+    if (NUM_MOVES_TO_GENERATE <= 0)
+    {
+        return "";
+    }
+
     moves scramble[NUM_MOVES_TO_GENERATE];
     std::string scramble_string = "";
 

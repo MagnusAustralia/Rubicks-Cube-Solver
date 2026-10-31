@@ -105,7 +105,7 @@ struct rubicks_3x3
     std::string edges_list[NUM_EDGES];
     bool keep_blank_edge_orientations;
 
-    rubicks_3x3(const cube_case case_3x3 = STANDARD_CUBE, bool blank_edge_orientations = true)
+    rubicks_3x3(const cube_case case_3x3 = STANDARD_CUBE, bool blank_edge_orientations = false)
     {
         corners = SOLVED_CORNERS;
         keep_blank_edge_orientations = blank_edge_orientations;

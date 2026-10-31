@@ -14,15 +14,9 @@ BUILD_DIR   := build
 SRCS    := $(wildcard $(SRC_DIR)/*.cpp)
 HEADERS := $(wildcard $(INCLUDE_DIR)/*.h)
 
-# raylib (macOS, installed with `brew install raylib`)
-RAYLIB_PREFIX   := $(shell brew --prefix raylib 2>/dev/null)
-RAYLIB_CPPFLAGS := -I$(RAYLIB_PREFIX)/include
-RAYLIB_LDLIBS   := -L$(RAYLIB_PREFIX)/lib -lraylib \
-                   -framework OpenGL -framework Cocoa -framework IOKit -framework CoreVideo
-
 # FILE = the file whose main() runs. DEPS = the other files to link with it.
 # If DEPS isn't set (e.g. `make run FILE=x`), every other source file is linked.
-FILE ?= depth_first_search
+FILE ?= korf
 DEPS ?= $(filter-out $(FILE),$(basename $(notdir $(SRCS))))
 A    ?=
 
@@ -31,10 +25,10 @@ OBJS    := $(patsubst %,$(OBJ_DIR)/%.o,$(FILE) $(DEPS))
 TARGET  := $(BUILD_DIR)/$(FILE)
 
 .DEFAULT_GOAL := dfs
-.PHONY: dfs 2x2 3x3 lehmer gen-corners gen-edges render run check check-raylib clean format format-check tidy lint
+.PHONY: dfs 2x2 3x3 lehmer gen-corners gen-edges run check clean format format-check tidy lint
 
 # ---- Shortcuts: FILE + only the files it depends on ----
-dfs:         				; @$(MAKE) --no-print-directory run FILE=depth_first_search DEPS="generate_data lehmer_code rubicks_2x2 rubicks_3x3 generate_scramble" A="$(A)"
+dfs:         				; @$(MAKE) --no-print-directory run FILE=korf DEPS="depth_first_search generate_data lehmer_code rubicks_2x2 rubicks_3x3 generate_scramble" A="$(A)"
 2x2:         				; @$(MAKE) --no-print-directory run FILE=rubicks_2x2 DEPS="" A="$(A)"
 3x3:         				; @$(MAKE) --no-print-directory run FILE=rubicks_3x3 DEPS="rubicks_2x2" A="$(A)"
 lehmer:      				; @$(MAKE) --no-print-directory run FILE=lehmer_code DEPS="rubicks_2x2 rubicks_3x3" A="$(A)"
@@ -45,16 +39,6 @@ gen-corners-slices:			; @$(MAKE) --no-print-directory run FILE=generate_data DEP
 gen-edges-slices: 			; @$(MAKE) --no-print-directory run FILE=generate_data DEPS="lehmer_code rubicks_2x2 rubicks_3x3" A="edges-slice $(A)"
 gen-corners-slices-perm:	; @$(MAKE) --no-print-directory run FILE=generate_data DEPS="lehmer_code rubicks_2x2 rubicks_3x3" A="corners-slices-perm $(A)"
 gen-edges-slices-perm: 		; @$(MAKE) --no-print-directory run FILE=generate_data DEPS="lehmer_code rubicks_2x2 rubicks_3x3" A="edges-slices-perm $(A)"
-
-# Build and run render.cpp with raylib. Override DEPS if render only needs some files,
-# e.g. `make render DEPS="rubicks_2x2 rubicks_3x3"`.
-render: check-raylib
-	@$(MAKE) --no-print-directory run FILE=renderer \
-		$(if $(DEPS_SET),DEPS="$(DEPS)") \
-		CPPFLAGS="$(RAYLIB_CPPFLAGS)" LDLIBS="$(RAYLIB_LDLIBS)" A="$(A)"
-
-check-raylib:
-	@test -n "$(RAYLIB_PREFIX)" || { echo "error: raylib not found (install with: brew install raylib)"; exit 1; }
 
 # ---- Build and run ----
 run: check $(TARGET)
@@ -83,7 +67,7 @@ format-check:
 
 # Static analysis on every source file (uses .clang-tidy)
 tidy:
-	$(CLANG_TIDY) $(SRCS) -- -std=c++17 -I$(INCLUDE_DIR) $(RAYLIB_CPPFLAGS)
+	$(CLANG_TIDY) $(SRCS) -- -std=c++17 -I$(INCLUDE_DIR)
 
 # Run both checks
 lint: format-check tidy

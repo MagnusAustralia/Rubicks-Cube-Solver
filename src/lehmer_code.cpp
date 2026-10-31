@@ -133,7 +133,7 @@ void lehmer_data<num_elements, num_considered, cube_type>::find_considered_eleme
             for (int j = 0; j < num_elements; j++)
             {
                 uint8_t current_edge = (uint8_t)((remaining_edges >> (j * EDGE_WIDTH)) & EDGE_PIECE_MASK);
-                if (current_edge >= num_considered)
+                if (current_edge >= num_considered && current_edge != uint8_t(NN))
                 {
                     considered_element_index_list[current_edge - num_considered] = j;
                 }
@@ -162,6 +162,7 @@ void lehmer_data<num_elements, num_considered, cube_type>::find_considered_eleme
                     index++;
                 }
             }
+            break;
 
         case STANDARD_CUBE:
             std::cerr << "Invalid cube case for lehmer code\n";
@@ -336,9 +337,9 @@ int lehmer_data<num_elements, num_considered, cube_type>::rank()
 
 int main()
 {
-    lehmer_data<8, 8, rubicks_3x3> data;
+    lehmer_data<12, 6, rubicks_3x3> data(CASE_TWO_3X3);
 
-    data.cube.input_scramble("B2");
+    data.cube.input_scramble("B");
 
     std::cout << "Rank: " << data.lehmer_index() << "\n";
 
@@ -351,61 +352,3 @@ template struct lehmer_data<12, 4, rubicks_3x3>;
 template struct lehmer_data<8, 8, rubicks_3x3>;
 template struct lehmer_data<8, 6, rubicks_3x3>;
 template struct lehmer_data<8, 4, rubicks_3x3>;
-
-// TODO: Used for co-ordinate mappings for Korf's Algorithm
-// void generate_move_tables(int (&corner_perm_table)[NUM_CORNER_PERMS][NUM_MOVES])
-// {
-//     lehmer_data<8, 8, rubicks_2x2> data;
-//     uint64_t selected_corner_perm_state = 0;
-
-//     for (unsigned int i = 0; i < NUM_CORNER_PERMS; i++)
-//     {
-//         data.find_position_permutation_from_rank(i, selected_corner_perm_state);
-//         for (int j = 0; j < NUM_MOVES; j++)
-//         {
-//             data.cube.corners = selected_corner_perm_state;
-//             data.cube.input_move(moves(j));
-//             data.find_position_permutation_list();
-//             corner_perm_table[i][j] = data.rank(data.position_permutation_list);
-//         }
-//     }
-// }
-
-// {
-// TODO: Used for co-ordinate mappings for Korf's Algorithm
-// template <>
-// void lehmer_data<8, 8, rubicks_2x2>::find_position_permutation_from_rank(unsigned int perm_state,
-//                                                                          uint64_t &corner_perm_state)
-//     {
-//         const uint8_t ELEMENT_LENGTH = 6;
-//         const int NUM_ELEMENTS = 8;
-
-//         /**
-//          * 1. De-rank the rank to generate the permutation list
-//          * 2. Iterate through the permutation list, to generate the states in reverse
-//          */
-
-//         for (int i = 0; i < NUM_ELEMENTS; i++)
-//         {
-//             position_permutation_list[i] = perm_state / factorial_list[i];
-//             perm_state -= factorial_list[i] * position_permutation_list[i];
-//         }
-
-//         int indexes[NUM_ELEMENTS];
-
-//         for (int i = 0; i < NUM_ELEMENTS; i++)
-//         {
-//             int count = position_permutation_list[i];
-//             for (int j = i + 1; j < NUM_ELEMENTS; j++)
-//             {
-//                 if (indexes[i] > indexes[j])
-//                     count++;
-//             }
-//         }
-
-//         for (int i = 0; i < NUM_ELEMENTS; i++)
-//         {
-//             corner_perm_state = (corner_perm_state << ELEMENT_LENGTH) | (uint8_t)((corner)(indexes[i]));
-//         }
-//     }
-// }
