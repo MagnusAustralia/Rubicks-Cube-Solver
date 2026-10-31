@@ -15,6 +15,8 @@
  */
 int heuristic_korf(const rubicks_3x3 &cube, const pattern_dbs &db, const int MAX_HEURISTIC);
 
+int heuristic_korf(const rubicks_2x2 &cube, const pattern_dbs &db, const int MAX_HEURISTIC);
+
 /**
  * Finds the optimal solution for a 3x3 Rubicks Cube
  *
@@ -22,5 +24,7 @@ int heuristic_korf(const rubicks_3x3 &cube, const pattern_dbs &db, const int MAX
  * @param db The pattern_dbs struct storing pointers to all the memory mapped pattern databases
  */
 void korfs_algorithm(const rubicks_3x3 &cube, const pattern_dbs &db);
+
+void korfs_algorithm(const rubicks_2x2 &cube, const pattern_dbs &db);
 
 #endif

@@ -137,7 +137,7 @@ struct rubicks_3x3
      *
      * @return True if the Rubick's Cube is solved, otherwise False
      */
-    bool is_solved(const cube_case variation = STANDARD_CUBE);
+    bool is_solved(const cube_case variation = STANDARD_CUBE) const;
 
     /**
      * Uses the current corner state to update corners_list with the colours of the corners in the

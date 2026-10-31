@@ -9,7 +9,7 @@
 #include <unordered_map>
 
 void process_moves(const cube_state_data &INITIAL_CUBE_STATE, std::queue<rubicks_3x3> &states,
-                   std::unordered_map<uint32_t, uint8_t> &known_states, uint8_t depth, int &num_states,
+                   std::unordered_map<uint32_t, uint8_t> &known_states, const uint8_t depth, int &num_states,
                    const pdb_type PDB)
 {
     switch (PDB)
@@ -234,7 +234,7 @@ void generate_db(const pdb_type PDB)
     {
         num_possible_states = POSSIBLE_EDGE_SLICE_STATES;
         filename = EDGES_SLICE_DB_FILENAME;
-        variation;
+        // variation;
         // I can't remember D:
         // lehmer_data<12, 4, rubicks_3x3> indexer(variation);
         // known_states[indexer.lehmer_index()] = 0;

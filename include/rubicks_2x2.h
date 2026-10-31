@@ -169,7 +169,7 @@ struct rubicks_2x2
      *
      * @return True if the Rubick's Cube is solved, otherwise False
      */
-    bool is_solved();
+    bool is_solved() const;
 
     /**
      * Uses the current corner state to update corners_list with the colours of the corners in the

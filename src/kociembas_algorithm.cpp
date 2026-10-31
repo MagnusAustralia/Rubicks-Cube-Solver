@@ -1,4 +1,4 @@
-#include "../include/kociembas-algorithm.h"
+#include "../include/kociembas_algorithm.h"
 #include "../include/depth_first_search.h"
 #include "../include/generate_data.h"
 #include "../include/generate_scramble.h"

@@ -48,11 +48,42 @@ void close_data_files(pattern_dbs &db)
     // munmap(static_cast<void *>(db.edge_slice_perm_depths), POSSIBLE_EDGE_SLICE_PERM_STATES / 2);
 }
 
-int moves_till_solved(const rubicks_3x3 &cube, const pattern_dbs &db, const pdb_type PBD)
+int moves_till_solved(const rubicks_2x2 cube, const pattern_dbs &db, const pdb_type PBD)
 {
     int distance_from_solved = 0;
     uint32_t index = 0;
-    unsigned char byte;
+    unsigned char byte = 0;
+
+    switch (PBD)
+    {
+    case CORNERS_PDB: // Works
+    {
+        lehmer_data<8, 8, rubicks_2x2> indexer;
+        indexer.cube.corners = cube.corners;
+        index = indexer.lehmer_index();
+        byte = db.corner_depths[index >> 1];
+        break;
+    }
+    default:
+        std::cerr << "Invalid pattern database type for a 2x2";
+    }
+    if (index & 1)
+    {
+        distance_from_solved = (byte >> 4) & 0b1111;
+    }
+    else
+    {
+        distance_from_solved = byte & 0b1111;
+    }
+
+    return distance_from_solved;
+}
+
+int moves_till_solved(const rubicks_3x3 cube, const pattern_dbs &db, const pdb_type PBD)
+{
+    int distance_from_solved = 0;
+    uint32_t index = 0;
+    unsigned char byte = 0;
 
     switch (PBD)
     {
@@ -67,8 +98,7 @@ int moves_till_solved(const rubicks_3x3 &cube, const pattern_dbs &db, const pdb_
     case EDGES_CASE_1_PDB: // Works
     {
         lehmer_data<12, 6, rubicks_3x3> indexer(CASE_ONE_3X3);
-        indexer.cube.corners = cube.corners;
-        indexer.cube.edges = cube.edges;
+        indexer.cube = cube;
         index = indexer.lehmer_index();
         byte = db.edge_case_1_depths[index >> 1];
         break;
@@ -76,8 +106,7 @@ int moves_till_solved(const rubicks_3x3 &cube, const pattern_dbs &db, const pdb_
     case EDGES_CASE_2_PDB: // Works
     {
         lehmer_data<12, 6, rubicks_3x3> indexer(CASE_TWO_3X3);
-        indexer.cube.corners = cube.corners;
-        indexer.cube.edges = cube.edges;
+        indexer.cube = cube;
         index = indexer.lehmer_index();
         byte = db.edge_case_2_depths[index >> 1];
         break;
@@ -85,8 +114,7 @@ int moves_till_solved(const rubicks_3x3 &cube, const pattern_dbs &db, const pdb_
     case CORNER_SLICE_PDB:
     {
         lehmer_data<12, 4, rubicks_3x3> indexer(CASE_MIDDLE_SLICE_3X3);
-        indexer.cube.corners = cube.corners;
-        indexer.cube.edges = cube.edges;
+        indexer.cube = cube;
         index = indexer.lehmer_index();
         byte = db.corner_slice_depths[index >> 1];
         break;
@@ -128,21 +156,22 @@ int moves_till_solved(const rubicks_3x3 &cube, const pattern_dbs &db, const pdb_
     return distance_from_solved;
 }
 
-void iterative_deepening_a_star(const rubicks_3x3 &cube, moves (&moves_list)[21], const pattern_dbs &db,
-                                int (*heuristic)(rubicks_3x3 const &, pattern_dbs const &, int))
+template <typename cube_type>
+void iterative_deepening_a_star(const cube_type &cube, moves (&moves_list)[21], const pattern_dbs &db,
+                                int (*heuristic)(const cube_type &, const pattern_dbs &, int))
 {
-    std::stack<node> node_stack;
+    std::stack<node<cube_type>> node_stack;
     bool solved = false;
     // Initialises the next_bound as the heuristic of the cube
     int next_bound = heuristic(cube, db, INFINITE_DEPTH);
     int bound = 0;
     int estimated_moves = 0;
-    node current_node;
+    node<cube_type> current_node;
     while (!solved)
     {
         if (node_stack.empty())
         {
-            node_stack.push(node{cube, INVALID_MOVE, 0});
+            node_stack.push(node<cube_type>{cube, INVALID_MOVE, 0});
             bound = next_bound;
             next_bound = INFINITE_DEPTH; // i.e. Infinity
         }
@@ -167,19 +196,18 @@ void iterative_deepening_a_star(const rubicks_3x3 &cube, moves (&moves_list)[21]
         }
         else
         {
-            std::stack<node> successors;
+            std::stack<node<cube_type>> successors;
             for (int i = 0; i < NUM_MOVES; i++)
             {
                 if (current_node.depth == 0 || !prune(moves(i), current_node.move))
                 {
-                    rubicks_3x3 new_cube;
-                    new_cube.edges = current_node.cube.edges;
-                    new_cube.corners = current_node.cube.corners;
+                    cube_type new_cube;
+                    new_cube = current_node.cube;
                     new_cube.input_move(moves(i));
                     estimated_moves = current_node.depth + 1 + heuristic(new_cube, db, bound - current_node.depth - 1);
                     if (estimated_moves <= bound)
                     {
-                        successors.push(node{new_cube, moves(i), estimated_moves});
+                        successors.push(node<cube_type>{new_cube, moves(i), estimated_moves});
                     }
                     else if (estimated_moves < next_bound)
                     {
@@ -189,10 +217,15 @@ void iterative_deepening_a_star(const rubicks_3x3 &cube, moves (&moves_list)[21]
             }
             while (!successors.empty())
             {
-                node successor = successors.top();
+                node<cube_type> successor = successors.top();
                 successors.pop();
-                node_stack.push(node{successor.cube, successor.move, current_node.depth + 1});
+                node_stack.push(node<cube_type>{successor.cube, successor.move, current_node.depth + 1});
             }
         }
     }
 }
+
+template void iterative_deepening_a_star<rubicks_2x2>(const rubicks_2x2 &, moves (&)[21], const pattern_dbs &,
+                                                      int (*)(const rubicks_2x2 &, const pattern_dbs &, int));
+template void iterative_deepening_a_star<rubicks_3x3>(const rubicks_3x3 &, moves (&)[21], const pattern_dbs &,
+                                                      int (*)(const rubicks_3x3 &, const pattern_dbs &, int));

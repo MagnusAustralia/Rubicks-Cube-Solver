@@ -1,5 +1,0 @@
-#include "../include/depth_first_search.h"
-#include "../include/generate_data.h"
-#include "../include/generate_scramble.h"
-#include "../include/lehmer_code.h"
-#include "../include/rubicks_2x2.h"

@@ -38,9 +38,9 @@ struct pattern_dbs
  * @field move Stores the previous move used to reach this state
  * @field depth Stores the current depth of this node
  */
-struct node
+template <typename cube_type> struct node
 {
-    rubicks_3x3 cube;
+    cube_type cube;
     moves move;
     int depth;
 };
@@ -79,7 +79,19 @@ void close_data_files(pattern_dbs &db);
  *
  * @return The estimated number of moves to satify the specified pattern database
  */
-int moves_till_solved(const rubicks_3x3 &cube, const pattern_dbs &db, const pdb_type PBD);
+int moves_till_solved(const rubicks_2x2 cube, const pattern_dbs &db, const pdb_type PBD);
+
+/**
+ * Returns an estimate of the number of moves required to solve the passed in cube state, according to a specified
+ * pattern database
+ *
+ * @param cube The cube state to analyse
+ * @param db The pattern_dbs struct, storing pointers to the memory mapped pattern databases
+ * @param PDB The specific pattern database to use to analyse the cube state
+ *
+ * @return The estimated number of moves to satify the specified pattern database
+ */
+int moves_till_solved(const rubicks_3x3 cube, const pattern_dbs &db, const pdb_type PBD);
 
 /**
  * Preforms an iterative deepening A* depth first search to find the moves needed to reach the desired state
@@ -89,7 +101,8 @@ int moves_till_solved(const rubicks_3x3 &cube, const pattern_dbs &db, const pdb_
  * @param db The pattern_dbs struct, storing pointers to the memory mapped pattern databases
  * @param heuristic The heuristic function being used to estimate the moves from solved
  */
-void iterative_deepening_a_star(const rubicks_3x3 &cube, moves (&moves_list)[21], const pattern_dbs &db,
-                                int (*heuristic)(rubicks_3x3 const &, pattern_dbs const &, int));
+template <typename cube_type>
+void iterative_deepening_a_star(const cube_type &cube, moves (&moves_list)[21], const pattern_dbs &db,
+                                int (*heuristic)(const cube_type &, const pattern_dbs &, int));
 
 #endif

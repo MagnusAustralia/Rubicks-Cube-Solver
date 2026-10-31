@@ -1,13 +1,18 @@
+#include "../include/korfs_algorithm.h"
 #include "../include/depth_first_search.h"
 #include "../include/generate_data.h"
 #include "../include/generate_scramble.h"
-#include "../include/korfs-algorithm.h"
 #include "../include/lehmer_code.h"
 #include "../include/rubicks_2x2.h"
 #include <algorithm>
 #include <iostream>
 #include <stack>
 #include <unistd.h>
+
+int heuristic_korf(const rubicks_2x2 &cube, const pattern_dbs &db, const int)
+{
+    return moves_till_solved(cube, db, CORNERS_PDB);
+}
 
 int heuristic_korf(const rubicks_3x3 &cube, const pattern_dbs &db, const int MAX_HEURISTIC)
 {
@@ -65,6 +70,21 @@ int heuristic_korf(const rubicks_3x3 &cube, const pattern_dbs &db, const int MAX
     return std::max({h1, h2, h3});
 }
 
+void korfs_algorithm(const rubicks_2x2 &cube, const pattern_dbs &db)
+{
+    moves moves_list[21] = {};
+
+    iterative_deepening_a_star(cube, moves_list, db, heuristic_korf);
+
+    std::cout << "\nMoves Used: ";
+
+    for (int i = 0; moves_list[i] != INVALID_MOVE; i++)
+    {
+        std::cout << print_move(moves_list[i]) << " ";
+    }
+    std::cout << "\n\n";
+}
+
 void korfs_algorithm(const rubicks_3x3 &cube, const pattern_dbs &db)
 {
     moves moves_list[21] = {};
@@ -100,4 +120,6 @@ int main()
     korfs_algorithm(cube, db);
 
     close_data_files(db);
+
+    return 0;
 }

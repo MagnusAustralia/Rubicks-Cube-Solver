@@ -68,7 +68,7 @@ std::string get_edge(edge e, orientation o)
     return current_edge.substr(x, 1) + current_edge.substr((x + 1) % 2, 1);
 };
 
-bool rubicks_3x3::is_solved(const cube_case variation)
+bool rubicks_3x3::is_solved(const cube_case variation) const
 {
     uint64_t expected_edges;
 

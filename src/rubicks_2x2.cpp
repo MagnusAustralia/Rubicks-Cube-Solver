@@ -171,7 +171,7 @@ moves get_move(std::string move)
     }
 }
 
-bool rubicks_2x2::is_solved()
+bool rubicks_2x2::is_solved() const
 {
     return corners == SOLVED_CORNERS;
 }
