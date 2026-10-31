@@ -48,7 +48,7 @@ int heuristic_kociemba(const rubicks_3x3 &cube, const pattern_dbs &db, const int
     return std::max({h1, h2});
 }
 
-void kociembas_algorithm(const rubicks_3x3 &cube, const pattern_dbs &db)
+void kociembas_algorithm(rubicks_3x3 &cube, const pattern_dbs &db)
 {
     moves moves_list[21] = {};
 

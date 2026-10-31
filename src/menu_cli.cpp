@@ -47,7 +47,8 @@ struct cube_data
  * The list of enum option in main menu.
  *
  * @option CREATE_NEW_CUBE_MENU The option to choose the cube type.
- * @option GENERATE_SCRAMBLE_MENU The option to generate a scramble for the cube.
+ * @option GENERATE_RANDOM_SCRAMBLE_MENU The option to generate a random scramble for the cube.
+ * @option GENERATE_SET_LENGTH_SCRAMBLE_MENU The option to generate a scramble of a set length for the cube.
  * @option INPUT_SCRAMBLE_MENU The option input a scamble into the cube.
  * @option PRINT_CUBE_STATE_MENU The option to print the current cube state to the console.
  * @option RUN_KORFS_ALGORITHM_MENU The option run korf's algorithm on the cube.
@@ -58,7 +59,8 @@ struct cube_data
 enum main_menu_option
 {
     CREATE_NEW_CUBE_MENU,
-    GENERATE_SCRAMBLE_MENU,
+    GENERATE_RANDOM_SCRAMBLE_MENU,
+    GENERATE_SET_LENGTH_SCRAMBLE_MENU,
     INPUT_SCRAMBLE_MENU,
     PRINT_CUBE_STATE_MENU,
     RUN_KORFS_ALGORITHM_MENU,
@@ -101,11 +103,11 @@ void handle_new_cube(cube_data &cube)
 }
 
 /**
- * Generates a scramble for the Rubicks cube
+ * Generates a random scramble for the Rubicks cube
  *
  * @param cube The rubicks cube to scramble
  */
-void handle_generate_scramble(cube_data &cube)
+void handle_generate_random_scramble(cube_data &cube)
 {
     std::string scramble = generate_scramble();
 
@@ -121,6 +123,55 @@ void handle_generate_scramble(cube_data &cube)
     }
 
     std::cout << "\nCube scrambled!\n\n";
+}
+
+/**
+ * Generates a set length scramble for the Rubicks cube
+ *
+ * @param cube The rubicks cube to scramble
+ */
+void handle_generate_set_length_scramble(cube_data &cube)
+{
+    std::string line;
+    int length = 0;
+    do
+    {
+        std::cout << "How long do you want the scamble to be: ";
+        std::getline(std::cin, line);
+
+        if (line.length() > 0)
+        {
+            length = std::stoi(line);
+
+            if (length <= 0)
+            {
+                length = 0;
+                std::cout << "\nThe scramble must have a positive length more than 0\n";
+            }
+        }
+        else
+        {
+            std::cout << "\nYou must enter an integer\n";
+        }
+
+    } while (length == 0);
+
+    std::string scramble = generate_scramble(length);
+
+    std::cout << "Scramble Generated: " << scramble << "\n";
+
+    switch (cube.current)
+    {
+    case CUBE_TYPE_2X2:
+        cube.r2.input_scramble(scramble);
+        break;
+
+    case CUBE_TYPE_3X3:
+        cube.r3.input_scramble(scramble);
+        break;
+    }
+
+    std::cout << "\n";
 }
 
 /**
@@ -295,28 +346,29 @@ main_menu_option read_main_menu()
     std::string menu_input;
     int menu_option = 0;
 
-    while (menu_option < 1 || menu_option > 8)
+    while (menu_option < 1 || menu_option > 9)
     {
         std::cout << "1. Create a new cube\n";
-        std::cout << "2. Generate a scamble\n";
-        std::cout << "3. Input a scamble\n";
-        std::cout << "4. Print cube\n";
-        std::cout << "5. Run Korf's Algorithm\n";
-        std::cout << "6. Run Kociemba's Algorithm\n";
-        std::cout << "7. Generate Data\n";
-        std::cout << "8. Quit\n\n";
+        std::cout << "2. Generate a random scamble\n";
+        std::cout << "3. Generate a set-length scamble\n";
+        std::cout << "4. Input a scamble\n";
+        std::cout << "5. Print cube\n";
+        std::cout << "6. Run Korf's Algorithm\n";
+        std::cout << "7. Run Kociemba's Algorithm\n";
+        std::cout << "8. Generate Data\n";
+        std::cout << "9. Quit\n\n";
 
-        std::cout << "Enter your choice (a number between 1-8): ";
+        std::cout << "Enter your choice (a number between 1-9): ";
         std::getline(std::cin, menu_input);
 
         if (menu_input == "1" || menu_input == "2" || menu_input == "3" || menu_input == "4" || menu_input == "5" ||
-            menu_input == "6" || menu_input == "7" || menu_input == "8")
+            menu_input == "6" || menu_input == "7" || menu_input == "8" || menu_input == "9")
         {
             menu_option = std::stoi(menu_input);
         }
         else
         {
-            std::cout << "\nEnsure that you are input a number between 1-8\n\n";
+            std::cout << "\nEnsure that you are input a number between 1-9\n\n";
         }
     }
 
@@ -344,8 +396,11 @@ int main()
         case CREATE_NEW_CUBE_MENU:
             handle_new_cube(cube);
             break;
-        case GENERATE_SCRAMBLE_MENU:
-            handle_generate_scramble(cube);
+        case GENERATE_RANDOM_SCRAMBLE_MENU:
+            handle_generate_random_scramble(cube);
+            break;
+        case GENERATE_SET_LENGTH_SCRAMBLE_MENU:
+            handle_generate_set_length_scramble(cube);
             break;
         case INPUT_SCRAMBLE_MENU:
             handle_input_scramble(cube);

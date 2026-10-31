@@ -21,6 +21,6 @@ int heuristic_kociemba(const rubicks_3x3 &cube, const pattern_dbs &db, const int
  * @param cube The cube state being analysed
  * @param db The pattern_dbs struct storing pointers to all the memory mapped pattern databases
  */
-void kociembas_algorithm(const rubicks_3x3 &cube, const pattern_dbs &db);
+void kociembas_algorithm(rubicks_3x3 &cube, const pattern_dbs &db);
 
 #endif

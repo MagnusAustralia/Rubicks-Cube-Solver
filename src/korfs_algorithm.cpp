@@ -70,7 +70,7 @@ int heuristic_korf(const rubicks_3x3 &cube, const pattern_dbs &db, const int MAX
     return std::max({h1, h2, h3});
 }
 
-void korfs_algorithm(const rubicks_2x2 &cube, const pattern_dbs &db)
+void korfs_algorithm(rubicks_2x2 &cube, const pattern_dbs &db)
 {
     moves moves_list[21] = {};
 
@@ -85,7 +85,7 @@ void korfs_algorithm(const rubicks_2x2 &cube, const pattern_dbs &db)
     std::cout << "\n\n";
 }
 
-void korfs_algorithm(const rubicks_3x3 &cube, const pattern_dbs &db)
+void korfs_algorithm(rubicks_3x3 &cube, const pattern_dbs &db)
 {
     moves moves_list[21] = {};
 

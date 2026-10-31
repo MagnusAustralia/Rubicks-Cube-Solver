@@ -102,7 +102,7 @@ int moves_till_solved(const rubicks_3x3 cube, const pattern_dbs &db, const pdb_t
  * @param heuristic The heuristic function being used to estimate the moves from solved
  */
 template <typename cube_type>
-void iterative_deepening_a_star(const cube_type &cube, moves (&moves_list)[21], const pattern_dbs &db,
+void iterative_deepening_a_star(cube_type &cube, moves (&moves_list)[21], const pattern_dbs &db,
                                 int (*heuristic)(const cube_type &, const pattern_dbs &, int));
 
 #endif

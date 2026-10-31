@@ -157,7 +157,7 @@ int moves_till_solved(const rubicks_3x3 cube, const pattern_dbs &db, const pdb_t
 }
 
 template <typename cube_type>
-void iterative_deepening_a_star(const cube_type &cube, moves (&moves_list)[21], const pattern_dbs &db,
+void iterative_deepening_a_star(cube_type &cube, moves (&moves_list)[21], const pattern_dbs &db,
                                 int (*heuristic)(const cube_type &, const pattern_dbs &, int))
 {
     std::stack<node<cube_type>> node_stack;
@@ -190,6 +190,7 @@ void iterative_deepening_a_star(const cube_type &cube, moves (&moves_list)[21], 
             if (current_node.cube.is_solved() || (heuristic(current_node.cube, db, INFINITE_DEPTH) == 0))
             {
                 solved = true;
+                cube = current_node.cube;
 
                 return;
             }
@@ -225,7 +226,7 @@ void iterative_deepening_a_star(const cube_type &cube, moves (&moves_list)[21], 
     }
 }
 
-template void iterative_deepening_a_star<rubicks_2x2>(const rubicks_2x2 &, moves (&)[21], const pattern_dbs &,
+template void iterative_deepening_a_star<rubicks_2x2>(rubicks_2x2 &, moves (&)[21], const pattern_dbs &,
                                                       int (*)(const rubicks_2x2 &, const pattern_dbs &, int));
-template void iterative_deepening_a_star<rubicks_3x3>(const rubicks_3x3 &, moves (&)[21], const pattern_dbs &,
+template void iterative_deepening_a_star<rubicks_3x3>(rubicks_3x3 &, moves (&)[21], const pattern_dbs &,
                                                       int (*)(const rubicks_3x3 &, const pattern_dbs &, int));
