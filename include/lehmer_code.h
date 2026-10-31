@@ -5,10 +5,13 @@
 #include "../include/rubicks_3x3.h"
 #include <iostream>
 
-const int NUM_CORNER_PERMS = 40'320; // 8P8
-const int NUM_CORNER_ORIENTS = 2187; // 3^7
-const int NUM_EDGE_ORIENTS = 2048;   // 2^11
-const int NUM_SLICE_PERMS = 24;      // 4P4
+const int NUM_CORNER_PERMS = 40'320;               // 8P8
+const int TOTAL_NUM_CORNER_ORIENTATIONS = 2187;    // 3^7
+const int TOTAL_NUM_EDGE_ORIENTATION_6_EDGES = 64; // 2^6
+const int TOTAL_NUM_EDGE_ORIENTENTATIONS = 2048;   // 2^11
+const int NUM_SLICE_PERMS = 24;                    // 4P4
+const int MAX_RANKED = 8;
+const int MAX_CONSIDERED_INDEXES = 6;
 
 /**
  * Given an input n, this function returns it's factorial
@@ -40,6 +43,20 @@ uint32_t choose(int n, int k);
 uint32_t permutate(int n, int k);
 
 /**
+ * A enum to clarify which pattern database is being used
+ */
+enum pdb_type
+{
+    CORNERS_PDB,
+    EDGES_CASE_1_PDB,
+    EDGES_CASE_2_PDB,
+    CORNER_SLICE_PDB,
+    EDGE_SLICE_PDB,
+    CORNER_SLICE_PERM_PDB,
+    EDGE_SLICE_PERM_PDB
+};
+
+/**
  * A struct which is used to find the Lehmer Index of a Rubick's Cube state
  *
  * @field factorial_list[num_considered]                A pre-computed list to calculate the rank
@@ -49,18 +66,43 @@ uint32_t permutate(int n, int k);
  * @field cube_type                                     A store of a Rubicks cube to caclulate based off of
  * @field cube_variation                                The type of the cube (used to handle special cube cases)
  */
-template <int num_elements, int num_considered, typename cube_type> struct lehmer_data
+struct lehmer_data
 {
-    uint32_t factorial_list[num_considered];
-    int position_permutation_list[num_considered];
-    int considered_element_index_list[num_considered];
-    cube_type cube;
-    cube_case cube_variation;
+    uint32_t factorial_list[MAX_RANKED]; // Has a max os 8 elements
+    int position_permutation_list[MAX_RANKED];
+    int considered_element_index_list[MAX_CONSIDERED_INDEXES];
+    rubicks_3x3 cube;
+    pdb_type pdb;
+    int num_elements;
+    int num_considered;
 
-    lehmer_data(const cube_case variation = STANDARD_CUBE)
+    lehmer_data(const pdb_type variation)
     {
-        cube = cube_type(variation);
-        cube_variation = variation;
+        cube = rubicks_3x3();
+        pdb = variation;
+
+        switch (pdb)
+        {
+        case CORNERS_PDB:
+            num_elements = num_considered = 8;
+            break;
+        case EDGES_CASE_1_PDB:
+        case EDGES_CASE_2_PDB:
+            num_elements = 12;
+            num_considered = 6;
+            break;
+        case CORNER_SLICE_PDB:
+        case EDGE_SLICE_PDB:
+            num_elements = 12;
+            num_considered = 4;
+            break;
+        case CORNER_SLICE_PERM_PDB:
+        case EDGE_SLICE_PERM_PDB:
+            num_elements = 8;
+            num_considered = 8;
+            break;
+        }
+
         for (int i = 0; i < num_considered; i++)
         {
             factorial_list[i] = permutate(num_elements - 1 - i, num_considered - 1 - i);
@@ -111,18 +153,6 @@ template <int num_elements, int num_considered, typename cube_type> struct lehme
      *
      */
     int find_middle_slice_permutation_rank();
-
-    /**
-     *
-     */
-    // void find_position_permutation_from_rank(unsigned int perm_state, uint64_t &corner_perm_state);
 };
-
-template <> int lehmer_data<8, 8, rubicks_2x2>::lehmer_index();   // Korf's Algorithm: Corners PDB
-template <> int lehmer_data<12, 6, rubicks_3x3>::lehmer_index();  // Korf's Algorithm: Edges PDB
-template <> int lehmer_data<8, 8, rubicks_3x3>::lehmer_index();   //
-template <> int lehmer_data<12, 4, rubicks_3x3>::lehmer_index();  // Kociemba's Algorithm: Corner-Slice PDB
-template <> int lehmer_data<8, 6, rubicks_3x3>::lehmer_index();   // Kociemba's Algorithm: Corner-Slice-Perm PDB
-template <> int lehmer_data<12, 12, rubicks_3x3>::lehmer_index(); // Kociemba's Algorithm: Corner-Slice-Perm PDB
 
 #endif

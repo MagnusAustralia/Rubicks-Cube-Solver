@@ -1,6 +1,7 @@
 #ifndef GEN_DB_H
 #define GEN_DB_H
 
+#include "./lehmer_code.h"
 #include "./rubicks_3x3.h"
 #include <cstdint>
 #include <queue>
@@ -25,20 +26,6 @@ const std::string CORNERS_SLICE_DB_FILENAME = "./data/kociemba-pdbs/corners-slic
 const std::string EDGES_SLICE_DB_FILENAME = "./data/kociemba-pdbs/edges-slice.bin";
 const std::string CORNERS_SLICE_PERM_DB_FILENAME = "./data/kociemba-pdbs/corners-slice-perm.bin";
 const std::string EDGES_SLICE_DB_PERM_FILENAME = "./data/kociemba-pdbs/edges-slice-perm.bin";
-
-/**
- * A enum to clarify which pattern database is being used
- */
-enum pdb_type
-{
-    CORNERS_PDB,
-    EDGES_CASE_1_PDB,
-    EDGES_CASE_2_PDB,
-    CORNER_SLICE_PDB,
-    EDGE_SLICE_PDB,
-    CORNER_SLICE_PERM_PDB,
-    EDGE_SLICE_PERM_PDB
-};
 
 /**
  * A struct storing a compact represensation of the cube state of a 3x3 Rubicks Cube

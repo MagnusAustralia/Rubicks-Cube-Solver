@@ -3,10 +3,10 @@
 #include "../include/generate_scramble.h"
 #include "../include/kociembas_algorithm.h"
 #include "../include/korfs_algorithm.h"
+#include "../include/lehmer_code.h"
 #include "../include/rubicks_2x2.h"
 #include "../include/rubicks_3x3.h"
 
-#include <cstdlib>
 #include <ctime>
 #include <iostream>
 #include <sstream>

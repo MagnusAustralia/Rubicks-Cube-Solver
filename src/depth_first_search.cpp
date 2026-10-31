@@ -54,19 +54,19 @@ int moves_till_solved(const rubicks_2x2 cube, const pattern_dbs &db, const pdb_t
     uint32_t index = 0;
     unsigned char byte = 0;
 
-    switch (PBD)
+    if (PBD == CORNERS_PDB)
     {
-    case CORNERS_PDB: // Works
-    {
-        lehmer_data<8, 8, rubicks_2x2> indexer;
+        lehmer_data indexer(CORNERS_PDB);
         indexer.cube.corners = cube.corners;
         index = indexer.lehmer_index();
         byte = db.corner_depths[index >> 1];
-        break;
     }
-    default:
+    else
+    {
         std::cerr << "Invalid pattern database type for a 2x2";
+        return -1;
     }
+
     if (index & 1)
     {
         distance_from_solved = (byte >> 4) & 0b1111;
@@ -85,64 +85,10 @@ int moves_till_solved(const rubicks_3x3 cube, const pattern_dbs &db, const pdb_t
     uint32_t index = 0;
     unsigned char byte = 0;
 
-    switch (PBD)
-    {
-    case CORNERS_PDB: // Works
-    {
-        lehmer_data<8, 8, rubicks_2x2> indexer;
-        indexer.cube.corners = cube.corners;
-        index = indexer.lehmer_index();
-        byte = db.corner_depths[index >> 1];
-        break;
-    }
-    case EDGES_CASE_1_PDB: // Works
-    {
-        lehmer_data<12, 6, rubicks_3x3> indexer(CASE_ONE_3X3);
-        indexer.cube = cube;
-        index = indexer.lehmer_index();
-        byte = db.edge_case_1_depths[index >> 1];
-        break;
-    }
-    case EDGES_CASE_2_PDB: // Works
-    {
-        lehmer_data<12, 6, rubicks_3x3> indexer(CASE_TWO_3X3);
-        indexer.cube = cube;
-        index = indexer.lehmer_index();
-        byte = db.edge_case_2_depths[index >> 1];
-        break;
-    }
-    case CORNER_SLICE_PDB:
-    {
-        lehmer_data<12, 4, rubicks_3x3> indexer(CASE_MIDDLE_SLICE_3X3);
-        indexer.cube = cube;
-        index = indexer.lehmer_index();
-        byte = db.corner_slice_depths[index >> 1];
-        break;
-    }
-    case EDGE_SLICE_PDB:
-    { // I can't remember D:
-        // do something
-        break;
-    }
-    case CORNER_SLICE_PERM_PDB:
-    {
-        // lehmer_data<8, 8, rubicks_3x3> indexer(CASE_MIDDLE_SLICE_3X3);
-        // indexer.cube.corners = cube.corners;
-        // indexer.cube.edges = cube.edges;
-        // index = indexer.lehmer_index();
-        // byte = db.corner_depths[index >> 1];
-        break;
-    }
-    case EDGE_SLICE_PERM_PDB:
-    { // Fix this one
-        // lehmer_data<8, 8, rubicks_3x3> indexer(CASE_MIDDLE_SLICE_3X3);
-        // indexer.cube.corners = cube.corners;
-        // indexer.cube.edges = cube.edges;
-        // index = indexer.lehmer_index();
-        // byte = db.corner_depths[index >> 1];
-        break;
-    }
-    }
+    lehmer_data indexer(PBD);
+    indexer.cube = cube;
+    index = indexer.lehmer_index();
+    byte = db.corner_depths[index >> 1];
 
     if (index & 1)
     {

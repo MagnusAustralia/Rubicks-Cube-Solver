@@ -17,7 +17,7 @@ void process_moves(const cube_state_data &INITIAL_CUBE_STATE, std::queue<rubicks
     case CORNERS_PDB:
     {
         rubicks_3x3 cube;
-        lehmer_data<8, 8, rubicks_2x2> data;
+        lehmer_data data(CORNERS_PDB);
         for (int i = 0; i < NUM_MOVES; i++)
         {
             data.cube.corners = INITIAL_CUBE_STATE.corners;
@@ -35,64 +35,11 @@ void process_moves(const cube_state_data &INITIAL_CUBE_STATE, std::queue<rubicks
         break;
     }
     case EDGES_CASE_1_PDB:
-    {
-        lehmer_data<12, 6, rubicks_3x3> data(CASE_ONE_3X3);
-        for (int i = 0; i < NUM_MOVES; i++)
-        {
-            data.cube.edges = INITIAL_CUBE_STATE.edges;
-            moves current_move = (moves)i;
-            data.cube.input_move(current_move);
-            uint32_t index = data.lehmer_index();
-            if (known_states.find(index) == known_states.end())
-            {
-                known_states[index] = depth;
-                states.push(data.cube);
-                num_states++;
-            }
-        }
-        break;
-    }
     case EDGES_CASE_2_PDB:
-    {
-        lehmer_data<12, 6, rubicks_3x3> data(CASE_TWO_3X3);
-        for (int i = 0; i < NUM_MOVES; i++)
-        {
-            data.cube.edges = INITIAL_CUBE_STATE.edges;
-            moves current_move = (moves)i;
-            data.cube.input_move(current_move);
-            uint32_t index = data.lehmer_index();
-            if (known_states.find(index) == known_states.end())
-            {
-                known_states[index] = depth;
-                states.push(data.cube);
-                num_states++;
-            }
-        }
-        break;
-    }
     case CORNER_SLICE_PDB:
-    {
-        lehmer_data<12, 4, rubicks_3x3> data(CASE_MIDDLE_SLICE_3X3);
-        for (int i = 0; i < NUM_MOVES; i++)
-        {
-            data.cube.corners = INITIAL_CUBE_STATE.corners;
-            data.cube.edges = INITIAL_CUBE_STATE.edges;
-            moves current_move = (moves)i;
-            data.cube.input_move(current_move);
-            uint32_t index = data.lehmer_index();
-            if (known_states.find(index) == known_states.end())
-            {
-                known_states[index] = depth;
-                states.push(data.cube);
-                num_states++;
-            }
-        }
-        break;
-    }
     case EDGE_SLICE_PDB:
     {
-        // lehmer_data<12, 12, rubicks_3x3> data(STANDARD_CUBE); TEMP FIX
-        lehmer_data<12, 4, rubicks_3x3> data(CASE_MIDDLE_SLICE_3X3);
+        lehmer_data data(PDB);
         for (int i = 0; i < NUM_MOVES; i++)
         {
             data.cube.edges = INITIAL_CUBE_STATE.edges;
@@ -109,8 +56,9 @@ void process_moves(const cube_state_data &INITIAL_CUBE_STATE, std::queue<rubicks
         break;
     }
     case CORNER_SLICE_PERM_PDB:
+    case EDGE_SLICE_PERM_PDB:
     {
-        lehmer_data<8, 8, rubicks_3x3> data;
+        lehmer_data data(PDB);
         for (int i = 0; i < NUM_MOVES; i++)
         {
             data.cube.corners = INITIAL_CUBE_STATE.corners;
@@ -130,31 +78,6 @@ void process_moves(const cube_state_data &INITIAL_CUBE_STATE, std::queue<rubicks
                 }
             }
         }
-        break;
-    }
-    case EDGE_SLICE_PERM_PDB:
-    {
-        // lehmer_data<8, 8, rubicks_3x3> data;
-        // data.cube = cube;
-        // for (int i = 0; i < NUM_MOVES; i++)
-        // {
-        //     moves current_move = (moves)i;
-        //     // Filter out illegal moves
-        //     if (current_move != R && current_move != R_PRIME && current_move != L && current_move != L_PRIME &&
-        //         current_move != F && current_move != F_PRIME && current_move != B && current_move != B_PRIME)
-        //     {
-        //         data.cube.input_move(current_move);
-        //         uint32_t index = data.lehmer_index();
-        //         if (known_states.find(index) == known_states.end())
-        //         {
-        //             known_states[index] = depth;
-        //             states.push(data.cube);
-        //             num_states++;
-        //         }
-        //         data.cube.corners = INITIAL_CUBE_STATE.corners;
-        //         data.cube.edges = INITIAL_CUBE_STATE.edges;
-        //     }
-        // }
         break;
     }
     }
@@ -199,8 +122,6 @@ void generate_db(const pdb_type PDB)
     {
         num_possible_states = POSSIBLE_CORNER_STATES;
         filename = CORNERS_DB_FILENAME;
-        lehmer_data<8, 8, rubicks_2x2> indexer;
-        known_states[indexer.lehmer_index()] = 0;
         break;
     }
     case EDGES_CASE_1_PDB:
@@ -208,8 +129,6 @@ void generate_db(const pdb_type PDB)
         num_possible_states = POSSIBLE_EDGE_STATES;
         filename = EDGES_1_DB_FILENAME;
         variation = CASE_ONE_3X3;
-        lehmer_data<12, 6, rubicks_3x3> indexer(variation);
-        known_states[indexer.lehmer_index()] = 0;
         break;
     }
     case EDGES_CASE_2_PDB:
@@ -217,8 +136,6 @@ void generate_db(const pdb_type PDB)
         num_possible_states = POSSIBLE_EDGE_STATES;
         filename = EDGES_2_DB_FILENAME;
         variation = CASE_TWO_3X3;
-        lehmer_data<12, 6, rubicks_3x3> indexer(variation);
-        known_states[indexer.lehmer_index()] = 0;
         break;
     }
     case CORNER_SLICE_PDB:
@@ -226,37 +143,30 @@ void generate_db(const pdb_type PDB)
         num_possible_states = POSSIBLE_CORNER_SLICE_STATES;
         filename = CORNERS_SLICE_DB_FILENAME;
         variation = CASE_MIDDLE_SLICE_3X3;
-        lehmer_data<12, 4, rubicks_3x3> indexer(variation);
-        known_states[indexer.lehmer_index()] = 0;
         break;
     }
     case EDGE_SLICE_PDB:
     {
         num_possible_states = POSSIBLE_EDGE_SLICE_STATES;
         filename = EDGES_SLICE_DB_FILENAME;
-        // variation;
-        // I can't remember D:
-        // lehmer_data<12, 4, rubicks_3x3> indexer(variation);
-        // known_states[indexer.lehmer_index()] = 0;
         break;
     }
     case CORNER_SLICE_PERM_PDB:
     {
         num_possible_states = POSSIBLE_CORNER_SLICE_PERM_STATES;
         filename = CORNERS_SLICE_PERM_DB_FILENAME;
-        lehmer_data<8, 8, rubicks_3x3> indexer(variation);
-        known_states[indexer.lehmer_index()] = 0;
         break;
     }
     case EDGE_SLICE_PERM_PDB:
     {
         num_possible_states = POSSIBLE_EDGE_SLICE_PERM_STATES;
         filename = EDGES_SLICE_DB_PERM_FILENAME;
-        lehmer_data<8, 8, rubicks_3x3> indexer(variation);
-        known_states[indexer.lehmer_index()] = 0;
         break;
     }
     }
+
+    lehmer_data indexer(PDB);
+    known_states[indexer.lehmer_index()] = 0;
 
     moves_till_completion = (uint8_t *)calloc(num_possible_states / 2, sizeof(*moves_till_completion));
 

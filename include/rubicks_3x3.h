@@ -55,6 +55,7 @@ enum cube_case
     CASE_TWO_3X3,          // The cube case with only the last 6 edges.
     CASE_MIDDLE_SLICE_3X3, // The cube case with only the middle 4 edges.
     CASE_THREE_3X3         // The cube case with only the first 6 edges, excluding the middle slice
+    // TODO: Update CASE_THREE_3X3 to instead be all edges other than the middle slice
 };
 
 /**
