@@ -6,6 +6,7 @@
 #include <fcntl.h>
 #include <iostream>
 #include <stack>
+#include <string>
 #include <sys/mman.h>
 #include <unistd.h>
 
@@ -127,9 +128,9 @@ int moves_till_solved(const rubicks_3x3 cube, const pattern_dbs &db, const pdb_t
 }
 
 template <typename cube_type>
-void iterative_deepening_a_star(cube_type &cube, moves (&moves_list)[MAX_ALLOWED_MOVES], const pattern_dbs &db,
-                                int (*heuristic)(const cube_type &, const pattern_dbs &, int), int &depth,
-                                const bool restricted_moveset)
+std::string iterative_deepening_a_star(cube_type &cube, moves (&moves_list)[MAX_ALLOWED_MOVES], const pattern_dbs &db,
+                                       int (*heuristic)(const cube_type &, const pattern_dbs &, int), int &depth,
+                                       const bool restricted_moveset)
 {
     std::stack<node<cube_type>> node_stack;
     bool solved = false;
@@ -164,7 +165,14 @@ void iterative_deepening_a_star(cube_type &cube, moves (&moves_list)[MAX_ALLOWED
                 depth = current_node.depth;
                 cube = current_node.cube;
 
-                return;
+                std::string moves_used = "";
+
+                for (int i = 0; moves_list[i] != INVALID_MOVE; i++)
+                {
+                    moves_used += print_move(moves_list[i]) + " ";
+                }
+
+                return moves_used;
             }
         }
         else
@@ -198,9 +206,11 @@ void iterative_deepening_a_star(cube_type &cube, moves (&moves_list)[MAX_ALLOWED
     }
 }
 
-template void iterative_deepening_a_star<rubicks_2x2>(rubicks_2x2 &, moves (&)[MAX_ALLOWED_MOVES], const pattern_dbs &,
-                                                      int (*)(const rubicks_2x2 &, const pattern_dbs &, int), int &,
-                                                      const bool);
-template void iterative_deepening_a_star<rubicks_3x3>(rubicks_3x3 &, moves (&)[MAX_ALLOWED_MOVES], const pattern_dbs &,
-                                                      int (*)(const rubicks_3x3 &, const pattern_dbs &, int), int &,
-                                                      const bool);
+template std::string iterative_deepening_a_star<rubicks_2x2>(rubicks_2x2 &, moves (&)[MAX_ALLOWED_MOVES],
+                                                             const pattern_dbs &,
+                                                             int (*)(const rubicks_2x2 &, const pattern_dbs &, int),
+                                                             int &, const bool);
+template std::string iterative_deepening_a_star<rubicks_3x3>(rubicks_3x3 &, moves (&)[MAX_ALLOWED_MOVES],
+                                                             const pattern_dbs &,
+                                                             int (*)(const rubicks_3x3 &, const pattern_dbs &, int),
+                                                             int &, const bool);

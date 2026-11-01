@@ -487,21 +487,21 @@ void rubicks_2x2::input_scramble(std::string scramble)
     }
 }
 
-int main()
-{
-    // rubicks_2x2 cube;
-    // std::string scramble;
+// int main()
+// {
+//     // rubicks_2x2 cube;
+//     // std::string scramble;
 
-    // while (true)
-    // {
-    //     std::cout << "Enter your scramble: ";
-    //     std::getline(std::cin, scramble);
-    //     if (scramble == "q")
-    //         break;
-    //     cube.input_scramble(scramble);
-    //     cube.print_cube();
-    // }
-    test_rotations();
+//     // while (true)
+//     // {
+//     //     std::cout << "Enter your scramble: ";
+//     //     std::getline(std::cin, scramble);
+//     //     if (scramble == "q")
+//     //         break;
+//     //     cube.input_scramble(scramble);
+//     //     cube.print_cube();
+//     // }
+//     test_rotations();
 
-    return 0;
-}
+//     return 0;
+// }

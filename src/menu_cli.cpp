@@ -230,15 +230,17 @@ void handle_print_cube(cube_data &cube)
  */
 void handle_run_korfs_algorithm(cube_data &cube, const pattern_dbs &db)
 {
+    std::string moves_used;
     switch (cube.current)
     {
     case CUBE_TYPE_2X2:
-        korfs_algorithm(cube.r2, db);
+        moves_used = korfs_algorithm(cube.r2, db);
         break;
     case CUBE_TYPE_3X3:
-        korfs_algorithm(cube.r3, db);
+        moves_used = korfs_algorithm(cube.r3, db);
         break;
     }
+    std::cout << "\n" << moves_used << "\n\n";
 }
 
 /**
@@ -249,6 +251,7 @@ void handle_run_korfs_algorithm(cube_data &cube, const pattern_dbs &db)
  */
 void handle_run_kociembas_algorithm(cube_data &cube, const pattern_dbs &db)
 {
+    std::string moves_used;
     switch (cube.current)
     {
     case CUBE_TYPE_2X2:
@@ -256,7 +259,8 @@ void handle_run_kociembas_algorithm(cube_data &cube, const pattern_dbs &db)
         break;
 
     case CUBE_TYPE_3X3:
-        kociembas_algorithm(cube.r3, db);
+        moves_used = kociembas_algorithm(cube.r3, db);
+        std::cout << "\n" << moves_used << "\n";
         break;
     }
 

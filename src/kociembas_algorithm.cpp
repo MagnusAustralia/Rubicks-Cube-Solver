@@ -69,22 +69,17 @@ int heuristic_kociemba_phase_2(const rubicks_3x3 &cube, const pattern_dbs &db, c
     return std::max({h1, h2});
 }
 
-void kociembas_algorithm(rubicks_3x3 &cube, const pattern_dbs &db)
+std::string kociembas_algorithm(rubicks_3x3 &cube, const pattern_dbs &db)
 {
     moves moves_list[MAX_ALLOWED_MOVES] = {};
+    std::string moves_used = "Moves Used: ";
     int depth = 0;
 
     iterative_deepening_a_star(cube, moves_list, db, heuristic_kociemba_phase_1, depth);
 
-    iterative_deepening_a_star(cube, moves_list, db, heuristic_kociemba_phase_2, depth, true);
+    moves_used += iterative_deepening_a_star(cube, moves_list, db, heuristic_kociemba_phase_2, depth, true);
 
-    std::cout << "\nMoves Used: ";
-
-    for (int i = 0; moves_list[i] != INVALID_MOVE; i++)
-    {
-        std::cout << print_move(moves_list[i]) << " ";
-    }
-    std::cout << "\n";
+    return moves_used;
 }
 
 int main()

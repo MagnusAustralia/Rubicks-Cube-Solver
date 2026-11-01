@@ -6,6 +6,7 @@
 #include "../include/rubicks_2x2.h"
 #include "../include/rubicks_3x3.h"
 #include <cstdint>
+#include <string>
 
 const int MAX_ALLOWED_MOVES = 50;
 const int INFINITE_DEPTH = 100;
@@ -101,10 +102,12 @@ int moves_till_solved(const rubicks_3x3 cube, const pattern_dbs &db, const pdb_t
  * @param moves_list A list storing the moves used to reach the desired state
  * @param db The pattern_dbs struct, storing pointers to the memory mapped pattern databases
  * @param heuristic The heuristic function being used to estimate the moves from solved
+ *
+ * @return A storing storing the moves used to reach the solve state
  */
 template <typename cube_type>
-void iterative_deepening_a_star(cube_type &cube, moves (&moves_list)[MAX_ALLOWED_MOVES], const pattern_dbs &db,
-                                int (*heuristic)(const cube_type &, const pattern_dbs &, int), int &depth,
-                                const bool restricted_moveset = false);
+std::string iterative_deepening_a_star(cube_type &cube, moves (&moves_list)[MAX_ALLOWED_MOVES], const pattern_dbs &db,
+                                       int (*heuristic)(const cube_type &, const pattern_dbs &, int), int &depth,
+                                       const bool restricted_moveset = false);
 
 #endif

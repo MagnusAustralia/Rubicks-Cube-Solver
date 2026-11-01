@@ -585,31 +585,31 @@ void rubicks_3x3::input_scramble(std::string scramble)
     }
 }
 
-int main()
-{
-    rubicks_3x3 cube(CASE_MIDDLE_SLICE_3X3, false);
-    cube.input_scramble("F");
+// int main()
+// {
+//     rubicks_3x3 cube(CASE_MIDDLE_SLICE_3X3, false);
+//     cube.input_scramble("F");
 
-    std::cout << "Expected: " << std::bitset<60>(cube.edges) << "\n";
+//     std::cout << "Expected: " << std::bitset<60>(cube.edges) << "\n";
 
-    rubicks_3x3 cube2(CASE_MIDDLE_SLICE_3X3, true);
-    cube2.input_scramble("F");
+//     rubicks_3x3 cube2(CASE_MIDDLE_SLICE_3X3, true);
+//     cube2.input_scramble("F");
 
-    std::cout << "Expected: " << std::bitset<60>(cube2.edges) << "\n";
+//     std::cout << "Expected: " << std::bitset<60>(cube2.edges) << "\n";
 
-    // cube.print_cube();
-    // test_rotations();
+//     // cube.print_cube();
+//     // test_rotations();
 
-    // std::string scramble;
-    // while (true)
-    // {
-    //     std::cout << "Enter your scramble: ";
-    //     std::getline(std::cin, scramble);
-    //     if (scramble == "q")
-    //         break;
-    //     cube.input_scramble(scramble);
-    //     cube.print_cube();
-    // }
+//     // std::string scramble;
+//     // while (true)
+//     // {
+//     //     std::cout << "Enter your scramble: ";
+//     //     std::getline(std::cin, scramble);
+//     //     if (scramble == "q")
+//     //         break;
+//     //     cube.input_scramble(scramble);
+//     //     cube.print_cube();
+//     // }
 
-    return 0;
-}
+//     return 0;
+// }

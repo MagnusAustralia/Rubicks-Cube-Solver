@@ -3,6 +3,7 @@
 
 #include "../include/depth_first_search.h"
 #include "../include/rubicks_3x3.h"
+#include <string>
 
 /**
  * Finds an estimated number of moves that a given cube state is from solved, using Korf's Algorithm
@@ -31,7 +32,9 @@ int heuristic_kociemba_phase_2(const rubicks_3x3 &cube, const pattern_dbs &db, c
  *
  * @param cube The cube state being analysed
  * @param db The pattern_dbs struct storing pointers to all the memory mapped pattern databases
+ *
+ * @return A storing storing the moves used to solve the cube
  */
-void kociembas_algorithm(rubicks_3x3 &cube, const pattern_dbs &db);
+std::string kociembas_algorithm(rubicks_3x3 &cube, const pattern_dbs &db);
 
 #endif

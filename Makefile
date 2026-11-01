@@ -4,6 +4,9 @@ CPPFLAGS ?=
 LDFLAGS  ?=
 LDLIBS   ?=
 
+# SplashKit compiler wrapper (adds SplashKit include/lib paths)
+SKM_CXX  ?= skm clang++
+
 CLANG_FORMAT ?= clang-format
 CLANG_TIDY   ?= clang-tidy
 
@@ -17,21 +20,26 @@ SRCS    := $(wildcard $(SRC_DIR)/*.cpp)
 HEADERS := $(wildcard $(INCLUDE_DIR)/*.h)
 
 FILE ?= menu_cli
-DEPS ?= $(filter-out $(FILE),$(basename $(notdir $(SRCS))))
+# Default: link every source file except the main file and gui (SplashKit)
+DEPS ?= $(filter-out $(FILE) gui,$(basename $(notdir $(SRCS))))
 A    ?=
 
 OBJ_DIR := $(BUILD_DIR)/obj/$(FILE)
 OBJS    := $(patsubst %,$(OBJ_DIR)/%.o,$(FILE) $(DEPS))
 TARGET  := $(BUILD_DIR)/$(FILE)
 
+# Only the gui target links against SplashKit
+LINK_CXX := $(if $(filter gui,$(FILE)),$(SKM_CXX),$(CXX))
+
 .DEFAULT_GOAL := menu_cli
-.PHONY: cli korf kociemba 2x2 3x3 lehmer \
+.PHONY: menu_cli gui korf kociemba 2x2 3x3 lehmer \
         gen-corners gen-edges-1 gen-edges-2 gen-corners-slices \
         gen-edges-slices gen-corners-slices-perm gen-edges-slices-perm \
         run check clean format format-check tidy lint
 
 # ---- Shortcuts ----
-menu_cli:                        ; @$(MAKE) --no-print-directory run FILE=menu_cli A="$(A)"
+menu_cli:                   ; @$(MAKE) --no-print-directory run FILE=menu_cli A="$(A)"
+gui:                        ; @$(MAKE) --no-print-directory run FILE=gui DEPS="rubicks_2x2 rubicks_3x3 generate_scramble depth_first_search kociembas_algorithm korfs_algorithm lehmer_code" A="$(A)"
 korf:                       ; @$(MAKE) --no-print-directory run FILE=korfs_algorithm DEPS="depth_first_search generate_data lehmer_code rubicks_2x2 rubicks_3x3 generate_scramble" A="$(A)"
 kociemba:                   ; @$(MAKE) --no-print-directory run FILE=kociembas_algorithm DEPS="depth_first_search generate_data lehmer_code rubicks_2x2 rubicks_3x3 generate_scramble" A="$(A)"
 2x2:                        ; @$(MAKE) --no-print-directory run FILE=rubicks_2x2 DEPS="" A="$(A)"
@@ -54,12 +62,13 @@ check:
 
 $(TARGET): $(OBJS)
 	@mkdir -p $(@D)
-	$(CXX) $(CXXFLAGS) $^ -o $@ $(LDFLAGS) $(LDLIBS)
+	$(LINK_CXX) $(CXXFLAGS) $^ -o $@ $(LDFLAGS) $(LDLIBS)
 
-# Any linked file other than $(FILE) gets its main() renamed
+# Any linked file other than $(FILE) gets its main() renamed.
+# gui.cpp (and only gui.cpp) is compiled with the SplashKit wrapper.
 $(OBJ_DIR)/%.o: $(SRC_DIR)/%.cpp
 	@mkdir -p $(@D)
-	$(CXX) $(CXXFLAGS) $(CPPFLAGS) $(if $(filter $*,$(FILE)),,-Dmain=main_$*) -c $< -o $@
+	$(if $(filter $*,gui),$(SKM_CXX),$(CXX)) $(CXXFLAGS) $(CPPFLAGS) $(if $(filter $*,$(FILE)),,-Dmain=main_$*) -c $< -o $@
 
 # ---- Formatting and linting ----
 format:
