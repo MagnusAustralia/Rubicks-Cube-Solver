@@ -3,8 +3,15 @@
 #include <cstdlib>
 #include <string>
 
-bool prune(moves new_move, moves previous_move)
+bool prune(moves new_move, moves previous_move, const bool restricted_moveset)
 {
+    if (restricted_moveset)
+    {
+        if (new_move == R || new_move == R_PRIME || new_move == L || new_move == L_PRIME || new_move == F ||
+            new_move == F_PRIME || new_move == B || new_move == B_PRIME)
+            return true;
+    }
+
     // Adding the rule that moves must always follow the pattern of U -> D, R -> L, F -> B, and never the opposite
     switch (new_move)
     {

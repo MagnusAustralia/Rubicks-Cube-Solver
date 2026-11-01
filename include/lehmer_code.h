@@ -90,6 +90,7 @@ struct lehmer_data
         case EDGES_CASE_2_PDB:
             num_elements = 12;
             num_considered = 6;
+            cube.keep_blank_edge_orientations = false;
             break;
         case CORNER_SLICE_PDB:
         case EDGE_SLICE_PDB:

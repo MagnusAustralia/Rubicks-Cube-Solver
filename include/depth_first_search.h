@@ -7,6 +7,7 @@
 #include "../include/rubicks_3x3.h"
 #include <cstdint>
 
+const int MAX_ALLOWED_MOVES = 50;
 const int INFINITE_DEPTH = 100;
 
 /**
@@ -79,7 +80,7 @@ void close_data_files(pattern_dbs &db);
  *
  * @return The estimated number of moves to satify the specified pattern database
  */
-int moves_till_solved(const rubicks_2x2 cube, const pattern_dbs &db, const pdb_type PBD);
+int moves_till_solved(const rubicks_2x2 cube, const pattern_dbs &db, const pdb_type PDB);
 
 /**
  * Returns an estimate of the number of moves required to solve the passed in cube state, according to a specified
@@ -91,7 +92,7 @@ int moves_till_solved(const rubicks_2x2 cube, const pattern_dbs &db, const pdb_t
  *
  * @return The estimated number of moves to satify the specified pattern database
  */
-int moves_till_solved(const rubicks_3x3 cube, const pattern_dbs &db, const pdb_type PBD);
+int moves_till_solved(const rubicks_3x3 cube, const pattern_dbs &db, const pdb_type PDB);
 
 /**
  * Preforms an iterative deepening A* depth first search to find the moves needed to reach the desired state
@@ -102,7 +103,8 @@ int moves_till_solved(const rubicks_3x3 cube, const pattern_dbs &db, const pdb_t
  * @param heuristic The heuristic function being used to estimate the moves from solved
  */
 template <typename cube_type>
-void iterative_deepening_a_star(cube_type &cube, moves (&moves_list)[21], const pattern_dbs &db,
-                                int (*heuristic)(const cube_type &, const pattern_dbs &, int));
+void iterative_deepening_a_star(cube_type &cube, moves (&moves_list)[MAX_ALLOWED_MOVES], const pattern_dbs &db,
+                                int (*heuristic)(const cube_type &, const pattern_dbs &, int), int &depth,
+                                const bool restricted_moveset = false);
 
 #endif

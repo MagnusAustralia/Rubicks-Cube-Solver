@@ -9,7 +9,7 @@
 #include <stack>
 #include <unistd.h>
 
-int heuristic_kociemba(const rubicks_3x3 &cube, const pattern_dbs &db, const int MAX_HEURISTIC)
+int heuristic_kociemba_phase_1(const rubicks_3x3 &cube, const pattern_dbs &db, const int MAX_HEURISTIC)
 {
     uint64_t slice_edges = cube.edges;
     rubicks_3x3 corner_slice_cube;
@@ -48,11 +48,35 @@ int heuristic_kociemba(const rubicks_3x3 &cube, const pattern_dbs &db, const int
     return std::max({h1, h2});
 }
 
+int heuristic_kociemba_phase_2(const rubicks_3x3 &cube, const pattern_dbs &db, const int MAX_HEURISTIC)
+{
+    // Finds the number of moves required to reach the correct corner orientations and have
+    // every middle slice edge, in the middle slice
+    int h1 = moves_till_solved(cube, db, CORNER_SLICE_PERM_PDB);
+
+    // If the estimated distance h1 is more than the highest considered distance,
+    // then it returns to reduce required compute as it will be pruned anyway
+    if (h1 > MAX_HEURISTIC)
+    {
+        return h1;
+    }
+
+    // Finds the number of moves required to reach the correct edge orientations and have
+    // every middle slice edge, in the middle slice
+    int h2 = moves_till_solved(cube, db, EDGE_SLICE_PERM_PDB);
+
+    // // Returns the maximum value of h1 and h2
+    return std::max({h1, h2});
+}
+
 void kociembas_algorithm(rubicks_3x3 &cube, const pattern_dbs &db)
 {
-    moves moves_list[21] = {};
+    moves moves_list[MAX_ALLOWED_MOVES] = {};
+    int depth = 0;
 
-    iterative_deepening_a_star(cube, moves_list, db, heuristic_kociemba);
+    iterative_deepening_a_star(cube, moves_list, db, heuristic_kociemba_phase_1, depth);
+
+    iterative_deepening_a_star(cube, moves_list, db, heuristic_kociemba_phase_2, depth, true);
 
     std::cout << "\nMoves Used: ";
 
@@ -60,5 +84,29 @@ void kociembas_algorithm(rubicks_3x3 &cube, const pattern_dbs &db)
     {
         std::cout << print_move(moves_list[i]) << " ";
     }
-    std::cout << "\n\n";
+    std::cout << "\n";
+}
+
+int main()
+{
+    srand(time(0));
+
+    pattern_dbs db;
+
+    open_data_files(db);
+
+    std::string scramble = generate_scramble();
+
+    rubicks_3x3 cube;
+
+    cube.input_scramble(scramble);
+
+    cube.print_cube();
+    std::cout << "Scramble: " << scramble << "\n\n";
+
+    kociembas_algorithm(cube, db);
+
+    close_data_files(db);
+
+    return 0;
 }

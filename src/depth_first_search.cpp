@@ -33,8 +33,8 @@ void open_data_files(pattern_dbs &db)
     db.edge_case_2_depths = open_file(EDGES_2_DB_FILENAME, POSSIBLE_EDGE_STATES);
     db.corner_slice_depths = open_file(CORNERS_SLICE_DB_FILENAME, POSSIBLE_CORNER_SLICE_STATES);
     db.edge_slice_depths = open_file(EDGES_SLICE_DB_FILENAME, POSSIBLE_EDGE_SLICE_STATES);
-    // db.corner_slice_perm_depths = open_file(CORNERS_SLICE_DB_FILENAME, POSSIBLE_CORNER_SLICE_PERM_STATES);
-    // db.edge_slice_perm_depths = open_file(EDGES_SLICE_DB_FILENAME, POSSIBLE_EDGE_SLICE_PERM_STATES);
+    db.corner_slice_perm_depths = open_file(CORNERS_SLICE_PERM_DB_FILENAME, POSSIBLE_CORNER_SLICE_PERM_STATES);
+    db.edge_slice_perm_depths = open_file(EDGES_SLICE_PERM_DB_FILENAME, POSSIBLE_EDGE_SLICE_PERM_STATES);
 }
 
 void close_data_files(pattern_dbs &db)
@@ -44,17 +44,17 @@ void close_data_files(pattern_dbs &db)
     munmap(static_cast<void *>(db.edge_case_2_depths), POSSIBLE_EDGE_STATES / 2);
     munmap(static_cast<void *>(db.corner_slice_depths), POSSIBLE_CORNER_SLICE_STATES / 2);
     munmap(static_cast<void *>(db.edge_slice_depths), POSSIBLE_EDGE_SLICE_STATES / 2);
-    // munmap(static_cast<void *>(db.corner_slice_perm_depths), POSSIBLE_CORNER_SLICE_PERM_STATES / 2);
-    // munmap(static_cast<void *>(db.edge_slice_perm_depths), POSSIBLE_EDGE_SLICE_PERM_STATES / 2);
+    munmap(static_cast<void *>(db.corner_slice_perm_depths), POSSIBLE_CORNER_SLICE_PERM_STATES / 2);
+    munmap(static_cast<void *>(db.edge_slice_perm_depths), POSSIBLE_EDGE_SLICE_PERM_STATES / 2);
 }
 
-int moves_till_solved(const rubicks_2x2 cube, const pattern_dbs &db, const pdb_type PBD)
+int moves_till_solved(const rubicks_2x2 cube, const pattern_dbs &db, const pdb_type PDB)
 {
     int distance_from_solved = 0;
     uint32_t index = 0;
     unsigned char byte = 0;
 
-    if (PBD == CORNERS_PDB)
+    if (PDB == CORNERS_PDB)
     {
         lehmer_data indexer(CORNERS_PDB);
         indexer.cube.corners = cube.corners;
@@ -79,16 +79,40 @@ int moves_till_solved(const rubicks_2x2 cube, const pattern_dbs &db, const pdb_t
     return distance_from_solved;
 }
 
-int moves_till_solved(const rubicks_3x3 cube, const pattern_dbs &db, const pdb_type PBD)
+int moves_till_solved(const rubicks_3x3 cube, const pattern_dbs &db, const pdb_type PDB)
 {
     int distance_from_solved = 0;
     uint32_t index = 0;
     unsigned char byte = 0;
 
-    lehmer_data indexer(PBD);
+    lehmer_data indexer(PDB);
     indexer.cube = cube;
     index = indexer.lehmer_index();
-    byte = db.corner_depths[index >> 1];
+
+    switch (PDB)
+    {
+    case CORNERS_PDB:
+        byte = db.corner_depths[index >> 1];
+        break;
+    case EDGES_CASE_1_PDB:
+        byte = db.edge_case_1_depths[index >> 1];
+        break;
+    case EDGES_CASE_2_PDB:
+        byte = db.edge_case_2_depths[index >> 1];
+        break;
+    case CORNER_SLICE_PDB:
+        byte = db.corner_slice_depths[index >> 1];
+        break;
+    case EDGE_SLICE_PDB:
+        byte = db.edge_slice_depths[index >> 1];
+        break;
+    case CORNER_SLICE_PERM_PDB:
+        byte = db.corner_slice_perm_depths[index >> 1];
+        break;
+    case EDGE_SLICE_PERM_PDB:
+        byte = db.edge_slice_perm_depths[index >> 1];
+        break;
+    }
 
     if (index & 1)
     {
@@ -103,8 +127,9 @@ int moves_till_solved(const rubicks_3x3 cube, const pattern_dbs &db, const pdb_t
 }
 
 template <typename cube_type>
-void iterative_deepening_a_star(cube_type &cube, moves (&moves_list)[21], const pattern_dbs &db,
-                                int (*heuristic)(const cube_type &, const pattern_dbs &, int))
+void iterative_deepening_a_star(cube_type &cube, moves (&moves_list)[MAX_ALLOWED_MOVES], const pattern_dbs &db,
+                                int (*heuristic)(const cube_type &, const pattern_dbs &, int), int &depth,
+                                const bool restricted_moveset)
 {
     std::stack<node<cube_type>> node_stack;
     bool solved = false;
@@ -117,15 +142,15 @@ void iterative_deepening_a_star(cube_type &cube, moves (&moves_list)[21], const 
     {
         if (node_stack.empty())
         {
-            node_stack.push(node<cube_type>{cube, INVALID_MOVE, 0});
-            bound = next_bound;
+            node_stack.push(node<cube_type>{cube, INVALID_MOVE, depth});
+            bound = next_bound + depth;
             next_bound = INFINITE_DEPTH; // i.e. Infinity
         }
 
         current_node = node_stack.top();
         node_stack.pop();
 
-        if (current_node.depth > 0)
+        if (current_node.depth > 0 && current_node.move != INVALID_MOVE)
         {
             moves_list[current_node.depth - 1] = current_node.move;
         }
@@ -136,6 +161,7 @@ void iterative_deepening_a_star(cube_type &cube, moves (&moves_list)[21], const 
             if (current_node.cube.is_solved() || (heuristic(current_node.cube, db, INFINITE_DEPTH) == 0))
             {
                 solved = true;
+                depth = current_node.depth;
                 cube = current_node.cube;
 
                 return;
@@ -146,7 +172,7 @@ void iterative_deepening_a_star(cube_type &cube, moves (&moves_list)[21], const 
             std::stack<node<cube_type>> successors;
             for (int i = 0; i < NUM_MOVES; i++)
             {
-                if (current_node.depth == 0 || !prune(moves(i), current_node.move))
+                if (current_node.move == INVALID_MOVE || !prune(moves(i), current_node.move, restricted_moveset))
                 {
                     cube_type new_cube;
                     new_cube = current_node.cube;
@@ -172,7 +198,9 @@ void iterative_deepening_a_star(cube_type &cube, moves (&moves_list)[21], const 
     }
 }
 
-template void iterative_deepening_a_star<rubicks_2x2>(rubicks_2x2 &, moves (&)[21], const pattern_dbs &,
-                                                      int (*)(const rubicks_2x2 &, const pattern_dbs &, int));
-template void iterative_deepening_a_star<rubicks_3x3>(rubicks_3x3 &, moves (&)[21], const pattern_dbs &,
-                                                      int (*)(const rubicks_3x3 &, const pattern_dbs &, int));
+template void iterative_deepening_a_star<rubicks_2x2>(rubicks_2x2 &, moves (&)[MAX_ALLOWED_MOVES], const pattern_dbs &,
+                                                      int (*)(const rubicks_2x2 &, const pattern_dbs &, int), int &,
+                                                      const bool);
+template void iterative_deepening_a_star<rubicks_3x3>(rubicks_3x3 &, moves (&)[MAX_ALLOWED_MOVES], const pattern_dbs &,
+                                                      int (*)(const rubicks_3x3 &, const pattern_dbs &, int), int &,
+                                                      const bool);

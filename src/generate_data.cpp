@@ -88,7 +88,7 @@ void bfs(uint8_t &depth, std::queue<rubicks_3x3> &current_depth, int &num_states
 {
     while (!current_depth.empty() || depth == 0)
     {
-        num_states_processd = 0;
+        // num_states_processd = 0;
         std::queue<rubicks_3x3> new_depth;
         while (!current_depth.empty())
         {
@@ -160,7 +160,7 @@ void generate_db(const pdb_type PDB)
     case EDGE_SLICE_PERM_PDB:
     {
         num_possible_states = POSSIBLE_EDGE_SLICE_PERM_STATES;
-        filename = EDGES_SLICE_DB_PERM_FILENAME;
+        filename = EDGES_SLICE_PERM_DB_FILENAME;
         break;
     }
     }

@@ -25,7 +25,7 @@ const std::string EDGES_2_DB_FILENAME = "./data/korf-pdbs/edges-case-2.bin";
 const std::string CORNERS_SLICE_DB_FILENAME = "./data/kociemba-pdbs/corners-slice.bin";
 const std::string EDGES_SLICE_DB_FILENAME = "./data/kociemba-pdbs/edges-slice.bin";
 const std::string CORNERS_SLICE_PERM_DB_FILENAME = "./data/kociemba-pdbs/corners-slice-perm.bin";
-const std::string EDGES_SLICE_DB_PERM_FILENAME = "./data/kociemba-pdbs/edges-slice-perm.bin";
+const std::string EDGES_SLICE_PERM_DB_FILENAME = "./data/kociemba-pdbs/edges-slice-perm.bin";
 
 /**
  * A struct storing a compact represensation of the cube state of a 3x3 Rubicks Cube
@@ -50,7 +50,7 @@ struct cube_state_data
  * found at
  * @param depth The current depth at which the new states are being saved with
  * @param num_states A store of how many states have been processed
- * @param PBD The type of pattern database being generated, and hence the classifier determining how the lehmer index is
+ * @param PDB The type of pattern database being generated, and hence the classifier determining how the lehmer index is
  * found
  */
 void process_moves(const cube_state_data &INITIAL_CUBE_STATE, std::queue<rubicks_3x3> &states,

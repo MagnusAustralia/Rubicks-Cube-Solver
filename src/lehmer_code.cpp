@@ -153,7 +153,7 @@ int lehmer_data::rank_orientations()
         }
     case EDGES_CASE_1_PDB:
     case EDGES_CASE_2_PDB:
-        for (int i = 6 - 1; i >= 0; i--)
+        for (int i = num_considered - 1; i >= 0; i--)
         {
             total = (total * NUM_EDGE_ORIENTATIONS) +
                     (((remaining_edges >> (EDGE_WIDTH * considered_element_index_list[i])) & EDGE_ORIENTATION_MASK) >>
@@ -215,7 +215,7 @@ void lehmer_data::find_position_permutation_list()
     {
         bool elements_seen[12] = {};
 
-        for (int i = 0; i < 6; i++)
+        for (int i = 0; i < num_considered; i++)
         {
             int count = 0;
             int position = considered_element_index_list[i];
@@ -244,15 +244,17 @@ void lehmer_data::find_position_permutation_list()
 
         uint64_t remaining_edges = cube.edges;
 
-        for (int i = NUM_EDGES - 1; i >= 0; i--)
+        int output_index = 0;
+
+        for (int i = NUM_EDGES - 1; i >= 0 && output_index < num_considered; i--)
         {
             current_edge = (uint8_t)(remaining_edges & EDGE_PIECE_MASK);
-            if (i < 4 || i >= 8) // Excludes the 4 middle slice edges
+            if (current_edge < 4 || current_edge >= 8) // Excludes the 4 middle slice edges
             {
-                indexes[i] = current_edge;
+                indexes[output_index++] = current_edge;
             }
 
-            remaining_edges >>= CORNER_WIDTH;
+            remaining_edges >>= EDGE_WIDTH;
         }
 
         for (int i = 0; i < NUM_EDGES - 4; i++)

@@ -62,6 +62,7 @@ int heuristic_korf(const rubicks_3x3 &cube, const pattern_dbs &db, const int MAX
     }
 
     edges_cube.edges = edges_case_2;
+    edges_cube.keep_blank_edge_orientations = false;
 
     // Finds the number of moves required to solve the last 6 edges
     int h3 = moves_till_solved(edges_cube, db, EDGES_CASE_2_PDB);
@@ -72,9 +73,10 @@ int heuristic_korf(const rubicks_3x3 &cube, const pattern_dbs &db, const int MAX
 
 void korfs_algorithm(rubicks_2x2 &cube, const pattern_dbs &db)
 {
-    moves moves_list[21] = {};
+    moves moves_list[MAX_ALLOWED_MOVES] = {};
+    int depth = 0;
 
-    iterative_deepening_a_star(cube, moves_list, db, heuristic_korf);
+    iterative_deepening_a_star(cube, moves_list, db, heuristic_korf, depth);
 
     std::cout << "\nMoves Used: ";
 
@@ -87,9 +89,10 @@ void korfs_algorithm(rubicks_2x2 &cube, const pattern_dbs &db)
 
 void korfs_algorithm(rubicks_3x3 &cube, const pattern_dbs &db)
 {
-    moves moves_list[21] = {};
+    moves moves_list[MAX_ALLOWED_MOVES] = {};
+    int depth = 0;
 
-    iterative_deepening_a_star(cube, moves_list, db, heuristic_korf);
+    iterative_deepening_a_star(cube, moves_list, db, heuristic_korf, depth);
 
     std::cout << "\nMoves Used: ";
 
@@ -109,6 +112,7 @@ int main()
     open_data_files(db);
 
     std::string scramble = generate_scramble(10);
+    // std::string scramble = "F";
 
     rubicks_3x3 cube;
 
@@ -118,6 +122,7 @@ int main()
     std::cout << "Scramble: " << scramble << "\n\n";
 
     korfs_algorithm(cube, db);
+    // heuristic_korf(cube, db, 100);
 
     close_data_files(db);
 
