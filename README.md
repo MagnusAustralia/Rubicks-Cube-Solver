@@ -263,4 +263,4 @@ Issues and pull requests are welcome. Please run `make lint` before submitting c
 
 ## License
 
-No license has been specified yet. Add a `LICENSE` file (for example MIT) to clarify how others may use this project.
+MIT
